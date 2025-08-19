@@ -7341,7 +7341,7 @@ def exibir_resultado(resultado):
 # Bloco principal para testes
 if __name__ == "__main__":
     # Cria instância de PVPEvaluator
-    avaliador = LPAEvaluator()
+    avaliador = DivLiquidaEBITDAEvaluator()
 
     # Teste 1: Avaliação automática com P/VP = 1.2
     # Avalia o valor P/VP 1.2
