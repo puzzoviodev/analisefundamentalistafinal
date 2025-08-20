@@ -236,6 +236,7 @@ def gravaIndiEficiênciaoStaus(wsIndiRentabilidade, dict_stocks, stock):
                     valor_pl = tratamento_indicador_combinado(indicador)
                     avaliador = MargemLiquidaEvaluator()
                     resultado = avaliador.avaliar(valor_pl)
+                DivLiquidaPatrimonioLiquidoEvaluator
 
                 faixa = resultado.faixa
                 descricao = resultado.descricao
