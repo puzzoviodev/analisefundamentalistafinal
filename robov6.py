@@ -169,13 +169,13 @@ def tratamento_indicador_copilot(indicador, percentual=False):
         print(f"Erro inesperado no tratamento: {e}", "métrica:", metricasts, "indicador:", indicador, "stock:", stock)
         return 0.0
 
-def tratamento_indicador_combinado(indicador, tipo_tratamento='float', stock=None, metricasts=None):
+ #Versão 3: Versão combinada (ajustada para detecção automática)
+def tratamento_indicador_combinado(indicador, stock=None, metricasts=None):
     """
-    Trata o valor de um indicador, convertendo para float ou percentual.
+    Trata o valor de um indicador, detectando automaticamente se é percentual ou float.
 
     Parâmetros:
-    - indicador: Valor a ser tratado (str, float, etc.)
-    - tipo_tratamento: 'float' para conversão direta, 'percent' para percentuais
+    - indicador: Valor a ser tratado (str, float, int, etc.)
     - stock: Contexto para log de erro (opcional)
     - metricasts: Contexto para log de erro (opcional)
 
@@ -188,14 +188,15 @@ def tratamento_indicador_combinado(indicador, tipo_tratamento='float', stock=Non
             return 0.0
         if isinstance(indicador, str):
             # Remove R$, espaços, pontos de milhar e substitui vírgula por ponto
-            indicador = indicador.replace("R$", "").replace(" ", "").replace(".", "").replace(",", ".").strip()
-            if tipo_tratamento == 'percent' and "%" in indicador:
-                return float(indicador.strip('%')) / 100
+            cleaned = indicador.replace("R$", "").replace(" ", "").replace(".", "").replace(",", ".").strip()
+            if "%" in cleaned:
+                return float(cleaned.strip('%')) / 100
+            return float(cleaned)
         return float(indicador)
     except Exception as e:
-        print(
-            f"Erro inesperado no tratamento ({tipo_tratamento}): {e}, metrica: {metricasts}, indicador: {indicador}, stock: {stock}")
+        print(f"Erro inesperado no tratamento: {e}, metrica: {metricasts}, indicador: {indicador}, stock: {stock}")
         return 0.0
+
 
 def tratamento(indicador):
     indicador2 = indicador
@@ -289,7 +290,7 @@ def gravaIndiEficiênciaoStaus(wsIndiRentabilidade, dict_stocks, stock):
                    #indicadortratado = tratamento2(dict_stocks[stock].get(metrica))
                    indicador = dict_stocks[stock].get(metrica)
                    #valor_pl = indicadortratado
-                   valor_pl = tratamento_indicador_combinado(indicador, tipo_tratamento='percent')
+                   valor_pl = tratamento_indicador_combinado(indicador)
                    avaliador =  ROEEvaluator()
                    resultado = avaliador.avaliar(valor_pl)
                    print(f"Classificação silvio: {resultado.classificacao}")
