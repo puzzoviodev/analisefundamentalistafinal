@@ -122,7 +122,7 @@ metricasts= ""
     'pessimo': {'min': 3, 'max': 4},            # Valores entre 3 e 4
     'critico': {'min': 4, 'max': float('inf')}   # Valores acima de 4
 }'''
-MetricasStatus = {'ROE','ROA','ROIC','Giro ativos','M. Bruta','M. EBITDA','M. EBIT','M. Liquida'}
+MetricasStatus = {'Giro ativos'}
 
 wbsaida = openpyxl.Workbook()
 
@@ -144,8 +144,9 @@ def criaPlanilhaIndRentabilidade(wbsaida):
         cell.fill = filltitulo
         cell.font = font_branca
 
+    # Versão 3: Versão combinada (corrigida para pontos e vírgulas)
 
-# Versão 3: Versão combinada (corrigida para não dividir percentuais por 100)
+
 def tratamento_indicador_combinado(indicador, stock=None, metricasts=None):
     """
     Trata o valor de um indicador, detectando automaticamente se é percentual ou float.
@@ -168,9 +169,9 @@ def tratamento_indicador_combinado(indicador, stock=None, metricasts=None):
             # Se contém vírgula, remove pontos como separadores de milhar e substitui vírgula por ponto
             if "," in cleaned:
                 cleaned = cleaned.replace(".", "").replace(",", ".")
-            # Remove % sem dividir por 100
+            # Se contém %, trata como percentual
             if "%" in cleaned:
-                return float(cleaned.strip('%'))
+                return float(cleaned.strip('%')) / 100
             return float(cleaned)
         return float(indicador)
     except Exception as e:
@@ -192,8 +193,7 @@ def gravaIndiEficiênciaoStaus(wsIndiRentabilidade, dict_stocks, stock):
     #        print(f'Métrica: {metrica}')
             linha2 += 1
             metricasts = metrica
-            if metrica in ['ROE','ROA','ROIC','Giro ativos',
-                           'M. Bruta','M. EBITDA','M. EBIT','M. Liquida']:
+            if metrica in ['ROE','ROA','ROIC','Giro ativos']:
 
 
                 if metrica == 'ROE':
@@ -216,26 +216,8 @@ def gravaIndiEficiênciaoStaus(wsIndiRentabilidade, dict_stocks, stock):
                    valor_pl = tratamento_indicador_combinado(indicador)
                    avaliador =  GiroAtivoEvaluator()
                    resultado = avaliador.avaliar(valor_pl)
-                elif metrica == 'M. Bruta':
-                    indicador = dict_stocks[stock].get(metrica)
-                    valor_pl = tratamento_indicador_combinado(indicador)
-                    avaliador =  MargemBrutaEvaluator()
-                    resultado = avaliador.avaliar(valor_pl)
-                elif metrica == 'M. EBITDA':
-                    indicador = dict_stocks[stock].get(metrica)
-                    valor_pl = tratamento_indicador_combinado(indicador)
-                    avaliador =  MargemEBITDAEvaluator()
-                    resultado = avaliador.avaliar(valor_pl)
-                elif metrica == 'M. EBIT':
-                    indicador = dict_stocks[stock].get(metrica)
-                    valor_pl = tratamento_indicador_combinado(indicador)
-                    avaliador = MargemEBITEvaluator()
-                    resultado = avaliador.avaliar(valor_pl)
-                elif metrica == 'M. Liquida':
-                    indicador = dict_stocks[stock].get(metrica)
-                    valor_pl = tratamento_indicador_combinado(indicador)
-                    avaliador = MargemLiquidaEvaluator()
-                    resultado = avaliador.avaliar(valor_pl)
+
+
 
                 faixa = resultado.faixa
                 descricao = resultado.descricao
@@ -262,8 +244,8 @@ def gravaIndiEficiênciaoStaus(wsIndiRentabilidade, dict_stocks, stock):
                              'Divida liquida','Valor de mercado','Valor de firma']:
 
                   wsIndiRentabilidade.cell(row=linha2, column=8, value=valor_pl).number_format = 'R$ #,##0.00'
-            elif metrica in ['ROE','ROA','ROIC','M. Bruta','M. EBITDA','M. EBIT','M. Liquida']:
-                  wsIndiRentabilidade.cell(row=linha2, column=8, value=valor_pl/100).number_format = numbers.FORMAT_PERCENTAGE_00
+            else:
+                wsIndiRentabilidade.cell(row=linha2, column=8, value=valor_pl/100).number_format = numbers.FORMAT_PERCENTAGE_00
 
 
 
