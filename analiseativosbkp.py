@@ -2714,7 +2714,7 @@ class DividaLiquidaEvaluator:
         return wrapper
 
     # Avalia o valor da Dívida Líquida em relação aos Ativos Totais e retorna um objeto ResultadoIND
-    def avaliar(self, divida_liquida, ativos_totais=None):
+    def avaliar(self, divida_liquida, ativos_totais):
         # Tenta processar o valor da Dívida Líquida e Ativos Totais
         try:
             # Verifica se as entradas são numéricas (int ou float) ou strings que podem ser convertidas
@@ -4570,7 +4570,7 @@ class VPAEvaluator:
         return wrapper
 
     # Avalia o valor do VPA em relação ao preço da ação (P/VPA) e retorna um objeto ResultadoIND
-    def avaliar(self, vpa, preco_acao=None):
+    def avaliar(self, vpa, preco_acao):
         # Tenta processar o valor do VPA e preço da ação
         try:
             # Verifica se as entradas são numéricas (int ou float) ou strings que podem ser convertidas
@@ -4578,13 +4578,12 @@ class VPAEvaluator:
                 if not isinstance(param, (int, float)) and not (isinstance(param, str) and param.replace('.', '', 1).isdigit()):
                     raise ValueError(f"O valor de {nome} deve ser numérico.")
             # Converte VPA e preço da ação para float
-            #vpa = float(vpa)
-            p_vpa = float(vpa)
-            #preco_acao = float(preco_acao)
+            vpa = float(vpa)
+            preco_acao = float(preco_acao)
             # Calcula o P/VPA (Preço / Valor Patrimonial por Ação)
-            #if vpa == 0:
-            #    raise ValueError("O VPA não pode ser zero para calcular P/VPA.")
-            #p_vpa = preco_acao / vpa
+            if vpa == 0:
+                raise ValueError("O VPA não pode ser zero para calcular P/VPA.")
+            p_vpa = preco_acao / vpa
             # Verifica se P/VPA é negativo, indicando patrimônio líquido negativo
             if p_vpa < 0:
                 # Retorna ResultadoIND para P/VPA negativo

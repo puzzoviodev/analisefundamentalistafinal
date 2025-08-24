@@ -284,11 +284,11 @@ def gravaIndiEficiênciaoStaus(wsIndiRentabilidade, dict_stocks, stock):
                     avaliador = DividendYieldEvaluator()
                     resultado = avaliador.avaliar(valor_pl)
 
-              #  elif metrica == 'P/L':
-              #      indicador = dict_stocks[stock].get(metrica)
-              #      valor_pl = tratamento_indicador_combinado(indicador)
-              #      avaliador = PatrimonioLiquidoEvaluator()
-              #      resultado = avaliador.avaliar(valor_pl)
+                elif metrica == 'P/L':
+                    indicador = dict_stocks[stock].get(metrica)
+                    valor_pl = tratamento_indicador_combinado(indicador)
+                    avaliador = PatrimonioLiquidoEvaluator()
+                    resultado = avaliador.avaliar(valor_pl)
 
                 elif metrica == 'P/VP':
                     indicador = dict_stocks[stock].get(metrica)
@@ -367,23 +367,23 @@ def gravaIndiEficiênciaoStaus(wsIndiRentabilidade, dict_stocks, stock):
                     avaliador = LiquidezMediaDiariaEvaluator()
                     resultado = avaliador.avaliar(valor_pl)
 
-               # elif metrica == 'Ativos':
-               #     indicador = dict_stocks[stock].get(metrica)
-               #     valor_pl = tratamento_indicador_combinado(indicador)
-               #     avaliador = AtivosEvaluator()
-               #     resultado = avaliador.avaliar(valor_pl)
+                elif metrica == 'Ativos':
+                    indicador = dict_stocks[stock].get(metrica)
+                    valor_pl = tratamento_indicador_combinado(indicador)
+                    avaliador = AtivosEvaluator()
+                    resultado = avaliador.avaliar(valor_pl)
 
-              #  elif metrica == 'Ativo circulante':
-              #      indicador = dict_stocks[stock].get(metrica)
-              #      valor_pl = tratamento_indicador_combinado(indicador)
-              #      avaliador = AtivoCirculanteEvaluator()
-              #      resultado = avaliador.avaliar(valor_pl)
+                elif metrica == 'Ativo circulante':
+                    indicador = dict_stocks[stock].get(metrica)
+                    valor_pl = tratamento_indicador_combinado(indicador)
+                    avaliador = AtivoCirculanteEvaluator()
+                    resultado = avaliador.avaliar(valor_pl)
 
-           #     elif metrica == 'Divida bruta':
-           #         indicador = dict_stocks[stock].get(metrica)
-           #         valor_pl = tratamento_indicador_combinado(indicador)
-           #         avaliador = DividaBrutaEvaluator()
-           #         resultado = avaliador.avaliar(valor_pl)
+                elif metrica == 'Divida bruta':
+                    indicador = dict_stocks[stock].get(metrica)
+                    valor_pl = tratamento_indicador_combinado(indicador)
+                    avaliador = DividaBrutaEvaluator()
+                    resultado = avaliador.avaliar(valor_pl)
 
                 elif metrica == 'Disponibilidade':
                     indicador = dict_stocks[stock].get(metrica)
@@ -391,17 +391,17 @@ def gravaIndiEficiênciaoStaus(wsIndiRentabilidade, dict_stocks, stock):
                     avaliador = DisponibilidadesEvaluator()
                     resultado = avaliador.avaliar(valor_pl)
 
-             #   elif metrica == 'Divida liquida':
-             #       indicador = dict_stocks[stock].get(metrica)
-             #       valor_pl = tratamento_indicador_combinado(indicador)
-             #       avaliador = DividaLiquidaEvaluator()
-             #       resultado = avaliador.avaliar(valor_pl)
+                elif metrica == 'Divida liquida':
+                    indicador = dict_stocks[stock].get(metrica)
+                    valor_pl = tratamento_indicador_combinado(indicador)
+                    avaliador = DividaLiquidaEvaluator()
+                    resultado = avaliador.avaliar(valor_pl)
 
-             #   elif metrica == 'Free Float':
-             #       indicador = dict_stocks[stock].get(metrica)
-             #       valor_pl = tratamento_indicador_combinado(indicador)
-             #       avaliador = FreeFloatEvaluator()
-             #       resultado = avaliador.avaliar(valor_pl)
+                elif metrica == 'Free Float':
+                    indicador = dict_stocks[stock].get(metrica)
+                    valor_pl = tratamento_indicador_combinado(indicador)
+                    avaliador = FreeFloatEvaluator()
+                    resultado = avaliador.avaliar(valor_pl)
 
                 faixa = resultado.faixa
                 descricao = resultado.descricao
@@ -409,7 +409,7 @@ def gravaIndiEficiênciaoStaus(wsIndiRentabilidade, dict_stocks, stock):
                 definicao = resultado.definicao
                 agrupador = resultado.agrupador
                 formula  = resultado.formula
-                #print(faixa)
+                print(descricao)
 
             wsIndiRentabilidade.cell(row=linha2, column=1, value=agrupador)
             wsIndiRentabilidade.cell(row=linha2, column=2, value='StausInvest')
