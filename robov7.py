@@ -445,7 +445,7 @@ def gravaIndiEficiênciaoStaus(wsIndiRentabilidade, dict_stocks, stock):
             if classificacao == 'Crítico':
                 wsIndiRentabilidade.cell(row=linha2, column=9, value=classificacao).fill = fillroxo
                 wsIndiRentabilidade.cell(row=linha2, column=10, value=faixa)
-            if classificacao == 'Baixo':
+            if classificacao == 'Ruim':
                 wsIndiRentabilidade.cell(row=linha2, column=9, value=classificacao).fill = fillvermelho
                 wsIndiRentabilidade.cell(row=linha2, column=10, value=faixa)
             if classificacao == 'Moderado':

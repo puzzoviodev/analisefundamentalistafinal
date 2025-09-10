@@ -1,5 +1,3 @@
-import pandas as pd
-from uuid import uuid4
 # Define a classe TagAlongEvaluator para avaliar o indicador Tag Along
 class TagAlongEvaluator:
     # Construtor que inicializa definição, agrupador e descrição do Tag Along
@@ -73,7 +71,7 @@ class TagAlongEvaluator:
             elif 1 <= tag_along < 80:
                 # Retorna ResultadoIND para proteção parcial insuficiente
                 return self.gerar_resultado(
-                    classificacao='Ruim',
+                    classificacao='Baixo',
                     faixa='1% <= Tag Along < 80%',
                     descricao='O Tag Along oferece proteção parcial, mas abaixo do padrão de mercado (ex.: 80% exigido pela B3 para o Novo Mercado). Sugere proteção limitada aos minoritários, com risco de desvalorização em caso de venda de controle.',
                     riscos='Risco de receber preços significativamente inferiores em uma venda de controle. Pode indicar governança corporativa fraca ou controle concentrado.',
@@ -202,7 +200,7 @@ class FreeFloatEvaluator:
             elif 0 <= free_float < 20:
                 # Retorna ResultadoIND para baixa liquidez
                 return self.gerar_resultado(
-                    classificacao='Ruim',
+                    classificacao='Baixo',
                     faixa='0 <= Free Float < 20%',
                     descricao='O Free Float é baixo, indicando liquidez limitada no mercado. Comum em empresas com forte controle acionário ou pequena capitalização, sugere dificuldade para negociar grandes volumes e menor atratividade para investidores institucionais.',
                     riscos='Risco de baixa liquidez, dificultando entrada e saída de posições. Pode haver maior volatilidade em preços ou manipulação por poucos acionistas.',
@@ -368,7 +366,7 @@ class FreeFloatEvaluatororiginal:
             elif 0 <= free_float < 20:
                 # Retorna ResultadoIND para baixa liquidez
                 return self.gerar_resultado(
-                    classificacao='Ruim',
+                    classificacao='Baixo',
                     faixa='0 <= Free Float < 20%',
                     descricao='O Free Float é baixo, indicando liquidez limitada no mercado. Comum em empresas com forte controle acionário ou pequena capitalização, sugere dificuldade para negociar grandes volumes e menor atratividade para investidores institucionais.',
                     riscos='Risco de baixa liquidez, dificultando entrada e saída de posições. Pode haver maior volatilidade em preços ou manipulação por poucos acionistas.',
@@ -535,7 +533,7 @@ class CAGRLucrosEvaluator:
             elif 0 <= cagr <= 0.05:
                 # Retorna ResultadoIND para crescimento baixo
                 return self.gerar_resultado(
-                    classificacao='Ruim',
+                    classificacao='Baixo',
                     faixa='0 <= CAGR <= 5%',
                     descricao='O CAGR indica crescimento baixo dos lucros líquidos, comum em setores maduros ou empresas com desafios de lucratividade. Sugere estabilidade, mas limitada capacidade de expansão dos lucros.',
                     riscos='Risco de estagnação ou pressão sobre margens em setores competitivos. Pode haver dependência de melhorias operacionais para sustentar lucros.',
@@ -700,9 +698,9 @@ class CAGREvaluator:
                 )
             # Verifica se CAGR está entre 0 e 5%, indicando crescimento baixo
             elif 0 <= cagr <= 0.05:
-                # Retorna ResultadoIND para crescimento Ruim
+                # Retorna ResultadoIND para crescimento baixo
                 return self.gerar_resultado(
-                    classificacao='Ruim',
+                    classificacao='Baixo',
                     faixa='0 <= CAGR <= 5%',
                     descricao='O CAGR indica crescimento baixo das receitas, comum em setores maduros ou empresas com desafios de expansão. Sugere estabilidade, mas limitada capacidade de crescimento orgânico.',
                     riscos='Risco de estagnação ou perda de competitividade em setores dinâmicos. Pode haver dependência de melhorias operacionais para sustentar margens.',
@@ -898,7 +896,7 @@ class BetaEvaluator:
             elif 1.2 < beta <= 2:
                 # Retorna ResultadoIND para alto risco
                 return self.gerar_resultado(
-                    classificacao='Ruim',
+                    classificacao='Baixo',
                     faixa='1.2 < Beta <= 2',
                     descricao='O Beta é alto, indicando que a ação é mais volátil que o mercado. Comum em setores cíclicos ou de crescimento, como tecnologia ou consumo discricionário, sugere maior risco sistemático, mas também maior potencial de retorno em mercados de alta.',
                     riscos='Risco de perdas significativas em mercados de baixa. Pode haver dependência de condições econômicas favoráveis.',
@@ -1084,7 +1082,7 @@ class WACCEvaluator:
             elif 0.12 < wacc <= 0.15:
                 # Retorna ResultadoIND para custo de capital alto
                 return self.gerar_resultado(
-                    classificacao='Ruim',
+                    classificacao='Baixo',
                     faixa='12% < WACC <= 15%',
                     descricao='O WACC é alto, indicando um custo de capital elevado. Comum em empresas com alta alavancagem ou em setores voláteis, como startups ou cíclicos, sugere maior risco para investidores e necessidade de retornos elevados para justificar investimentos.',
                     riscos='Risco de dificuldades em financiar projetos ou pagar dívidas. Pode haver dependência de capital caro ou volatilidade no custo do equity.',
@@ -1274,7 +1272,7 @@ class FCDEvaluator:
             elif proporcao_fcd_ev < 0.8:
                 # Retorna ResultadoIND para sobrevalorização
                 return self.gerar_resultado(
-                    classificacao='Ruim',
+                    classificacao='Baixo',
                     faixa='FCD/EV < 0.8',
                     descricao='O FCD é significativamente menor que o valor de mercado, sugerindo que a empresa está sobrevalorizada. Comum em empresas com altas expectativas de mercado ou setores inflacionados, indica que o preço atual pode não ser justificado pelos fluxos de caixa futuros.',
                     riscos='Risco de correção no preço da ação ou bolha de mercado. Pode haver dependência de premissas otimistas não sustentadas pelos fundamentos.',
@@ -1450,7 +1448,7 @@ class FCFEvaluator:
             elif 0 <= margem_fcf <= 0.05:
                 # Retorna ResultadoIND para geração de caixa baixa
                 return self.gerar_resultado(
-                    classificacao='Ruim',
+                    classificacao='Baixo',
                     faixa='0 <= Margem FCF <= 5%',
                     descricao='A margem de FCF é baixa, indicando geração de caixa limitada em relação à receita. Comum em setores com altos investimentos ou capital de giro elevado, como indústria pesada, sugere eficiência reduzida na conversão de receita em caixa livre.',
                     riscos='Risco de dificuldades em financiar dividendos, reduzir dívidas ou reinvestir. Pode haver dependência de financiamento ou CAPEX elevado.',
@@ -1615,7 +1613,7 @@ class CCCEvaluator:
             elif 60 < ccc <= 90:
                 # Retorna ResultadoIND para baixa eficiência
                 return self.gerar_resultado(
-                    classificacao='Ruim',
+                    classificacao='Baixo',
                     faixa='60 < CCC <= 90 dias',
                     descricao='O CCC é alto, indicando baixa eficiência na gestão do capital de giro. Comum em setores com estoques de baixa rotatividade, como indústria pesada, sugere demora na conversão de estoques e recebíveis em caixa, aumentando o risco de necessidade de financiamento.',
                     riscos='Risco de dependência de capital de giro elevado ou dificuldades de liquidez. Pode haver estoques obsoletos ou atrasos em recebíveis.',
@@ -1742,7 +1740,7 @@ class LiquidezSecaEvaluator:
             elif 0 <= liquidez_seca < 0.5:
                 # Retorna ResultadoIND para liquidez muito baixa
                 return self.gerar_resultado(
-                    classificacao='Ruim',
+                    classificacao='Baixo',
                     faixa='0 <= Liquidez Seca < 0.5',
                     descricao='A Liquidez Seca é muito baixa, indicando capacidade limitada de cobrir o passivo circulante sem depender de estoques. Comum em setores com estoques de baixa liquidez, como manufatura pesada, sugere risco financeiro em cenários de estresse.',
                     riscos='Risco de dificuldades financeiras se os estoques não forem convertidos em caixa. Pode haver dependência de vendas ou financiamentos de curto prazo.',
@@ -1884,7 +1882,7 @@ class LucroLiquidoEvaluator:
             elif 0 <= margem_liquida <= 0.05:
                 # Retorna ResultadoIND para lucratividade baixa
                 return self.gerar_resultado(
-                    classificacao='Ruim',
+                    classificacao='Baixo',
                     faixa='0 <= Margem Líquida <= 5%',
                     descricao='A margem líquida é baixa, indicando lucratividade limitada após todas as despesas. Comum em setores competitivos ou com altos custos, como varejo ou indústria pesada, sugere eficiência reduzida e capacidade limitada de gerar valor para acionistas.',
                     riscos='Risco de margens comprimidas por concorrência ou aumento de custos. Pode haver dificuldades em financiar dividendos ou investimentos.',
@@ -2027,7 +2025,7 @@ class EBITDAEvaluator:
             elif 0 <= margem_ebitda <= 0.10:
                 # Retorna ResultadoIND para lucratividade baixa
                 return self.gerar_resultado(
-                    classificacao='Ruim',
+                    classificacao='Baixo',
                     faixa='0 <= Margem EBITDA <= 10%',
                     descricao='A margem EBITDA é baixa, indicando lucratividade operacional limitada. Comum em setores competitivos ou com altos custos, como varejo ou indústria pesada, sugere eficiência reduzida na geração de caixa operacional, com margens apertadas.',
                     riscos='Risco de margens comprimidas por concorrência ou aumento de custos. Pode haver dificuldades em financiar investimentos ou pagar dívidas.',
@@ -2169,7 +2167,7 @@ class EBITEvaluator:
             elif 0 <= margem_ebit <= 0.05:
                 # Retorna ResultadoIND para lucratividade baixa
                 return self.gerar_resultado(
-                    classificacao='Ruim',
+                    classificacao='Baixo',
                     faixa='0 <= Margem EBIT <= 5%',
                     descricao='A margem EBIT é baixa, indicando lucratividade operacional limitada. Comum em setores competitivos ou com altos custos, como varejo ou indústria pesada, sugere eficiência reduzida na geração de lucros a partir das operações principais.',
                     riscos='Risco de margens comprimidas por concorrência ou aumento de custos. Pode haver dificuldades em financiar investimentos ou pagar dívidas.',
@@ -2310,7 +2308,7 @@ class ReceitaLiquidaEvaluator:
             elif 0 <= proporcao_receita_ativos <= 0.5:
                 # Retorna ResultadoIND para baixa eficiência
                 return self.gerar_resultado(
-                    classificacao='Ruim',
+                    classificacao='Baixo',
                     faixa='0 <= Receita Líquida / Ativos Totais <= 0.5',
                     descricao='A Receita Líquida é baixa em relação aos ativos, indicando baixa eficiência na utilização de recursos para gerar vendas. Comum em setores intensivos em capital, como imobiliário ou infraestrutura, sugere ineficiência operacional ou ativos ociosos.',
                     riscos='Risco de ativos subutilizados ou baixa competitividade de mercado. Pode haver necessidade de desinvestimento ou reestruturação operacional.',
@@ -2766,7 +2764,7 @@ class AtivosEvaluator:
             elif 4 < proporcao_ativos_receita <= 6:
                 # Retorna ResultadoIND para baixa eficiência
                 return self.gerar_resultado(
-                    classificacao='Ruim',
+                    classificacao='Baixo',
                     faixa='4 < Ativos Totais / Receita Líquida <= 6',
                     descricao='Os Ativos Totais são altos em relação à receita, indicando baixa eficiência na utilização de ativos. Comum em empresas com ativos ociosos ou setores de baixa rotatividade, como imobiliário, sugere ineficiência operacional e risco financeiro.',
                     riscos='Risco de ativos subutilizados ou necessidade de desinvestimento. Pode haver dificuldades em manter a lucratividade com alta base de ativos.',
@@ -2919,7 +2917,7 @@ class DividaLiquidaEvaluator:
             elif 0.6 < proporcao_divida_ativos <= 1.0:
                 # Retorna ResultadoIND para alta alavancagem
                 return self.gerar_resultado(
-                    classificacao='Ruim',
+                    classificacao='Baixo',
                     faixa='0.6 < Dívida Líquida / Ativos <= 1.0',
                     descricao='A Dívida Líquida é alta em relação aos ativos, indicando elevada alavancagem. Comum em setores intensivos em capital, como infraestrutura ou energia, sugere risco financeiro significativo devido à dependência de dívidas, mesmo considerando o caixa disponível.',
                     riscos='Risco de insolvência em cenários de queda na receita ou aumento de juros. Pode haver restrições de credores ou necessidade de venda de ativos.',
@@ -3072,7 +3070,7 @@ class DividaBrutaEvaluator:
             elif 0.6 < proporcao_divida_ativos <= 1.0:
                 # Retorna ResultadoIND para alta alavancagem
                 return self.gerar_resultado(
-                    classificacao='Ruim',
+                    classificacao='Baixo',
                     faixa='0.6 < Dívida Bruta / Ativos <= 1.0',
                     descricao='A Dívida Bruta é alta em relação aos ativos, indicando elevada alavancagem. Comum em setores intensivos em capital, como infraestrutura ou energia, mas sugere risco financeiro significativo devido à forte dependência de dívidas para financiar operações.',
                     riscos='Risco de insolvência em cenários de queda na receita ou aumento de juros. Pode haver restrições de credores ou necessidade de venda de ativos.',
@@ -3192,7 +3190,7 @@ class PatrimonioLiquidoEvaluator:
             elif 0 <= proporcao_pl_ativos <= 0.2:
                 # Retorna ResultadoIND para alta alavancagem
                 return self.gerar_resultado(
-                    classificacao='Ruim',
+                    classificacao='Baixo',
                     faixa='0 <= Patrimônio Líquido / Ativos <= 0.2',
                     descricao='O Patrimônio Líquido é baixo em relação aos ativos, indicando alta alavancagem, com a maior parte dos ativos financiada por dívidas. Comum em setores intensivos em capital, como energia ou infraestrutura, mas implica maior risco financeiro devido à dependência de credores.',
                     riscos='Risco de insolvência em cenários adversos, como aumento de juros ou queda na receita. Pode haver restrições de credores ou venda de ativos.',
@@ -3328,7 +3326,7 @@ class LiquidezMediaDiariaEvaluator:
             elif 0 <= liquidez_media_diaria <= 100000:
                 # Retorna ResultadoIND para liquidez muito baixa
                 return self.gerar_resultado(
-                    classificacao='Ruim',
+                    classificacao='Baixo',
                     faixa='0 <= Liquidez Média Diária <= 100.000',
                     descricao='A Liquidez Média Diária está muito baixa, indicando dificuldade significativa para comprar ou vender a ação sem impactar seu preço. Essa faixa é comum em empresas de baixa capitalização ou com pouco interesse de mercado, como small caps ou setores de nicho.',
                     riscos='Risco de baixa negociabilidade, spreads elevados ou dificuldade de saída do investimento. Pode haver volatilidade excessiva ou manipulação de preços.',
@@ -3465,7 +3463,7 @@ class PatrimonioAtivosEvaluator:
             elif 0 <= patrimonio_ativos <= 0.2:
                 # Retorna ResultadoIND para alta alavancagem
                 return self.gerar_resultado(
-                    classificacao='Ruim',
+                    classificacao='Baixo',
                     faixa='0 <= Patrimônio/Ativos <= 0.2',
                     descricao='O Patrimônio/Ativos está muito baixo, indicando que a maior parte dos ativos é financiada por dívidas, sugerindo alta alavancagem. Essa faixa é comum em setores intensivos em capital, como infraestrutura ou energia, mas implica maior risco financeiro devido à dependência de credores.',
                     riscos='Risco de insolvência em cenários adversos, como aumento de juros ou queda na receita. Pode haver restrições de credores ou necessidade de venda de ativos.',
@@ -3634,7 +3632,7 @@ class PAtivoCirculanteLiquidoEvaluator:
             elif 15 < p_ativo_circulante_liquido <= 20:
                 # Retorna ResultadoIND para sobrevalorização
                 return self.gerar_resultado(
-                    classificacao='Ruim',
+                    classificacao='Elevado',
                     faixa='15 < P/Ativo Circulante Líquido <= 20',
                     descricao='O P/Ativo Circulante Líquido está consideravelmente elevado, indicando sobrevalorização em relação à liquidez operacional. Essa faixa é comum em empresas com altas expectativas de crescimento ou setores premium, mas o preço reflete otimismo que pode ser arriscado se não sustentado.',
                     riscos='Risco de queda no preço se o ativo circulante líquido não suportar as expectativas. Pode haver dependência de ativos circulantes de baixa qualidade ou bolhas setoriais.',
@@ -3645,7 +3643,7 @@ class PAtivoCirculanteLiquidoEvaluator:
             elif p_ativo_circulante_liquido > 20:
                 # Retorna ResultadoIND para sobrevalorização extrema
                 return self.gerar_resultado(
-                    classificacao='Crítico',
+                    classificacao='Excessivo',
                     faixa='P/Ativo Circulante Líquido > 20',
                     descricao='O P/Ativo Circulante Líquido é extremamente elevado, sugerindo forte sobrevalorização ou expectativas irreais de liquidez operacional. Essa faixa é típica de bolhas de mercado, empresas de alto crescimento especulativo ou narrativas hype, onde o preço desconecta dos fundamentos financeiros.',
                     riscos='Alto risco de correção acentuada no preço, com potencial para perdas significativas. Pode haver dependência de narrativas de mercado ou baixa liquidez operacional.',
@@ -3749,7 +3747,7 @@ class PLAtivosEvaluator:
             elif 0 <= pl_ativos <= 0.2:
                 # Retorna ResultadoIND para alta alavancagem
                 return self.gerar_resultado(
-                    classificacao='Ruim',
+                    classificacao='Baixo',
                     faixa='0 <= PL/Ativos <= 0.2',
                     descricao='O PL/Ativos está muito baixo, indicando que a maior parte dos ativos é financiada por dívidas, sugerindo alta alavancagem. Essa faixa é comum em setores intensivos em capital, como infraestrutura ou energia, mas implica maior risco financeiro devido à dependência de credores.',
                     riscos='Risco de insolvência em cenários adversos, como aumento de juros ou queda na receita. Pode haver restrições de credores ou necessidade de venda de ativos.',
@@ -3897,7 +3895,7 @@ class DividendYieldEvaluator:
             elif 0 < dividend_yield <= 2:
                 # Retorna ResultadoIND para retorno baixo
                 return self.gerar_resultado(
-                    classificacao='Ruim',
+                    classificacao='Baixo',
                     faixa='0 < Dividend Yield <= 2%',
                     descricao='O Dividend Yield está baixo, sugerindo retorno limitado via dividendos em relação ao preço da ação. Essa faixa é comum em empresas de crescimento, como tecnologia, que priorizam reinvestimento de lucros, ou em empresas com margens apertadas e baixa distribuição.',
                     riscos='Risco de baixa atratividade para investidores que buscam renda passiva. Pode haver dependência de crescimento futuro ou lucros instáveis para sustentar dividendos.',
@@ -4066,7 +4064,7 @@ class PCapitalGiroEvaluator:
             elif 15 < p_capital_giro <= 20:
                 # Retorna ResultadoIND para sobrevalorização
                 return self.gerar_resultado(
-                    classificacao='Ruim',
+                    classificacao='Baixo',
                     faixa='15 < P/Capital de Giro <= 20',
                     descricao='O P/Capital de Giro está consideravelmente elevado, indicando sobrevalorização em relação à liquidez operacional. Essa faixa é comum em empresas com altas expectativas de crescimento ou em setores premium, mas o preço reflete otimismo significativo que pode ser arriscado se não sustentado.',
                     riscos='Risco de queda no preço se o capital de giro não suportar as expectativas. Pode haver dependência de ativos circulantes de baixa qualidade ou bolhas setoriais.',
@@ -4077,7 +4075,7 @@ class PCapitalGiroEvaluator:
             elif p_capital_giro > 20:
                 # Retorna ResultadoIND para sobrevalorização extrema
                 return self.gerar_resultado(
-                    classificacao='Ruim',
+                    classificacao='Baixo',
                     faixa='P/Capital de Giro > 20',
                     descricao='O P/Capital de Giro é extremamente elevado, sugerindo forte sobrevalorização ou expectativas irreais de liquidez operacional. Essa faixa é típica de bolhas de mercado, empresas de alto crescimento especulativo ou narrativas hype, onde o preço de mercado desconecta dos fundamentos financeiros.',
                     riscos='Alto risco de correção acentuada no preço, com potencial para perdas significativas. Pode haver dependência de narrativas de mercado ou baixa liquidez operacional.',
@@ -4213,7 +4211,7 @@ class PSREvaluator:
             elif 2.0 < psr <= 3.0:
                 # Retorna ResultadoIND para sobrevalorização
                 return self.gerar_resultado(
-                    classificacao='Ruim',
+                    classificacao='Baixo',
                     faixa='2.0 < PSR <= 3.0',
                     descricao='O PSR está consideravelmente elevado, indicando sobrevalorização em relação à receita líquida. Essa faixa é comum em empresas com altas expectativas de crescimento ou em setores premium, como tecnologia, mas o preço reflete otimismo significativo que pode ser arriscado se não sustentado.',
                     riscos='Risco de queda no preço se a receita declinar ou expectativas não se realizarem. Pode haver bolhas setoriais ou dependência de fatores intangíveis no valuation.',
@@ -4328,7 +4326,7 @@ class GiroAtivoEvaluator:
             elif 0 <= giro_ativo <= 0.5:
                 # Retorna ResultadoIND para eficiência muito baixa
                 return self.gerar_resultado(
-                    classificacao='Ruim',
+                    classificacao='Baixo',
                     faixa='0 <= Giro do Ativo <= 0.5',
                     descricao='O Giro do Ativo está muito baixo, indicando baixa eficiência na utilização dos ativos para gerar receita. Essa faixa é comum em setores intensivos em capital, como infraestrutura ou imobiliário, ou em empresas com ativos ociosos ou baixa demanda por seus produtos.',
                     riscos='Risco de ineficiência operacional, com ativos subutilizados ou custos elevados. Pode haver dependência de investimentos pesados ou baixa competitividade no mercado.',
@@ -4464,7 +4462,7 @@ class PLAtivosEvaluator:
             elif 0 <= pl_ativos <= 0.2:
                 # Retorna ResultadoIND para alta alavancagem
                 return self.gerar_resultado(
-                    classificacao='Ruim',
+                    classificacao='Baixo',
                     faixa='0 <= PL/Ativos <= 0.2',
                     descricao='O PL/Ativos está muito baixo, indicando que a maior parte dos ativos é financiada por dívidas, sugerindo alta alavancagem. Essa faixa é comum em setores intensivos em capital, como infraestrutura ou energia, mas implica maior risco financeiro devido à dependência de credores.',
                     riscos='Risco de insolvência em cenários adversos, como aumento de juros ou queda na receita. Pode haver restrições de credores ou necessidade de venda de ativos.',
@@ -4600,7 +4598,7 @@ class LiquidezCorrenteEvaluator:
             elif 0 <= liquidez_corrente < 0.8:
                 # Retorna ResultadoIND para liquidez muito baixa
                 return self.gerar_resultado(
-                    classificacao='Ruim',
+                    classificacao='Baixo',
                     faixa='0 <= Liquidez Corrente < 0.8',
                     descricao='A Liquidez Corrente está muito baixa, indicando que os ativos circulantes não cobrem as obrigações de curto prazo. Isso sugere alto risco de insolvência no curto prazo, comum em empresas com fluxo de caixa restrito, alta alavancagem ou setores intensivos em capital.',
                     riscos='Risco de default em obrigações de curto prazo, aumento de endividamento ou necessidade de venda de ativos. Pode haver pressão financeira ou baixa competitividade.',
@@ -4777,7 +4775,7 @@ class VPAEvaluator:
             elif 1.8 < p_vpa <= 2.5:
                 # Retorna ResultadoIND para sobrevalorização
                 return self.gerar_resultado(
-                    classificacao='Ruim',
+                    classificacao='Baixo',
                     faixa='1.8 < P/VPA <= 2.5',
                     descricao='O P/VPA está consideravelmente elevado, indicando sobrevalorização em relação ao valor patrimonial por ação. Essa faixa é comum em empresas com altas expectativas de crescimento ou em setores premium, mas o preço reflete otimismo significativo que pode ser arriscado se não sustentado.',
                     riscos='Risco de queda no preço se os ativos não gerarem retornos esperados. Pode haver sobrevalorização de intangíveis ou bolhas setoriais impulsionadas por hype de mercado.',
@@ -4926,7 +4924,7 @@ class PLEvaluator:
             elif 20 < p_l <= 25:
                 # Retorna ResultadoIND para sobrevalorização
                 return self.gerar_resultado(
-                    classificacao='Ruim',
+                    classificacao='Elevado',
                     faixa='20 < P/L <= 25',
                     descricao='O P/L está consideravelmente elevado, indicando sobrevalorização em relação ao lucro líquido. Essa faixa é comum em empresas com altas expectativas de crescimento ou em setores premium, mas o preço reflete otimismo significativo que pode ser arriscado se não sustentado.',
                     riscos='Risco de queda no preço se os lucros declinarem ou expectativas não se realizarem. Pode haver bolhas setoriais ou dependência de fatores intangíveis no valuation.',
@@ -4937,7 +4935,7 @@ class PLEvaluator:
             elif p_l > 25:
                 # Retorna ResultadoIND para sobrevalorização extrema
                 return self.gerar_resultado(
-                    classificacao='Crítico',
+                    classificacao='Excessivo',
                     faixa='P/L > 25',
                     descricao='O P/L é extremamente elevado, sugerindo forte sobrevalorização ou expectativas irreais de crescimento. Essa faixa é típica de bolhas de mercado, empresas de alto crescimento especulativo ou narrativas hype, onde o preço de mercado desconecta dos fundamentos financeiros.',
                     riscos='Alto risco de correção acentuada no preço, com potencial para perdas significativas. Pode haver dependência de fatores intangíveis, risco de fraudes em valuation ou lucros inflados.',
@@ -5041,7 +5039,7 @@ class ROICEvaluator:
             elif 0 <= roic <= 5:
                 # Retorna ResultadoIND para rentabilidade muito baixa
                 return self.gerar_resultado(
-                    classificacao='Ruim',
+                    classificacao='Baixo',
                     faixa='0 <= ROIC <= 5%',
                     descricao='O ROIC está muito baixo, sugerindo rentabilidade limitada sobre o capital investido. Isso é comum em setores intensivos em capital, como infraestrutura ou manufatura pesada, ou em empresas com baixa eficiência operacional, onde os retornos não justificam o capital empregado.',
                     riscos='Risco de baixa atratividade para investidores devido a retornos insuficientes. Pode haver capital ocioso, investimentos ineficientes ou dependência de economias de escala.',
@@ -5178,7 +5176,7 @@ class ROAEvaluator:
             elif 0 <= roa <= 3:
                 # Retorna ResultadoIND para rentabilidade muito baixa
                 return self.gerar_resultado(
-                    classificacao='Ruim',
+                    classificacao='Baixo',
                     faixa='0 <= ROA <= 3%',
                     descricao='O ROA está muito baixo, sugerindo rentabilidade limitada na utilização dos ativos. Isso é comum em setores intensivos em capital, como indústria pesada ou infraestrutura, ou em empresas com baixa eficiência operacional, onde os lucros não acompanham o volume de ativos.',
                     riscos='Risco de baixa atratividade para investidores devido a retornos insuficientes. Pode haver ativos subutilizados, custos elevados ou dependência de economias de escala.',
@@ -5314,7 +5312,7 @@ class ROEEvaluator:
             elif 0 <= roe <= 5:
                 # Retorna ResultadoIND para rentabilidade muito baixa
                 return self.gerar_resultado(
-                    classificacao='Ruim',
+                    classificacao='Baixo',
                     faixa='0 <= ROE <= 5%',
                     descricao='O ROE está muito baixo, sugerindo rentabilidade limitada sobre o patrimônio dos acionistas. Isso é comum em setores com margens apertadas, alta concorrência ou baixa eficiência operacional, como varejo ou indústrias de commodities, onde os lucros são insuficientes para remunerar o capital investido.',
                     riscos='Risco de baixa atratividade para investidores devido a retornos insuficientes. Pode haver dependência de fatores externos ou incapacidade de reinvestir lucros de forma eficaz.',
@@ -5482,7 +5480,7 @@ class PEBITDAEvaluator:
             elif 14 < p_ebitda <= 18:
                 # Retorna ResultadoIND para sobrevalorização
                 return self.gerar_resultado(
-                    classificacao='Ruim',
+                    classificacao='Baixo',
                     faixa='14 < P/EBITDA <= 18',
                     descricao='O P/EBITDA está consideravelmente elevado, indicando sobrevalorização em relação à geração de caixa operacional ajustada. Essa faixa é comum em empresas com altas expectativas de crescimento ou em setores premium, mas o preço reflete otimismo significativo que pode ser arriscado se não sustentado.',
                     riscos='Risco de queda no preço se o EBITDA declinar ou expectativas não se realizarem. Pode haver bolhas setoriais ou dependência de fatores intangíveis no valuation.',
@@ -5628,7 +5626,7 @@ class PEBITEvaluator:
             elif 16 < p_ebit <= 20:
                 # Retorna ResultadoIND para sobrevalorização
                 return self.gerar_resultado(
-                    classificacao='Ruim',
+                    classificacao='Elevado',
                     faixa='16 < P/EBIT <= 20',
                     descricao='O P/EBIT está consideravelmente elevado, indicando sobrevalorização em relação ao lucro operacional. Essa faixa é comum em empresas com altas expectativas de crescimento ou em setores premium, mas o preço reflete otimismo significativo que pode ser arriscado se não sustentado.',
                     riscos='Risco de queda no preço se o EBIT declinar ou expectativas não se realizarem. Pode haver bolhas setoriais ou dependência de fatores intangíveis no valuation.',
@@ -5639,7 +5637,7 @@ class PEBITEvaluator:
             elif p_ebit > 20:
                 # Retorna ResultadoIND para sobrevalorização extrema
                 return self.gerar_resultado(
-                    classificacao='Crítico',
+                    classificacao='Excessivo',
                     faixa='P/EBIT > 20',
                     descricao='O P/EBIT é extremamente elevado, sugerindo forte sobrevalorização ou expectativas irreais de crescimento operacional. Essa faixa é típica de bolhas de mercado, empresas de alto crescimento especulativo ou narrativas hype, onde o preço de mercado desconecta dos fundamentos operacionais.',
                     riscos='Alto risco de correção acentuada no preço, com potencial para perdas significativas. Pode haver dependência de fatores intangíveis, risco de fraudes em valuation ou EBIT inflado.',
@@ -5776,7 +5774,7 @@ class PAtivoEvaluator:
             elif 1.5 < p_ativo <= 2:
                 # Retorna ResultadoIND para sobrevalorização
                 return self.gerar_resultado(
-                    classificacao='Ruim',
+                    classificacao='Elevado',
                     faixa='1.5 < P/Ativo <= 2',
                     descricao='O P/Ativo está consideravelmente elevado, indicando sobrevalorização em relação aos ativos totais. Essa faixa sugere que o mercado espera alta rentabilidade ou crescimento futuro, comum em empresas de tecnologia ou setores premium, mas o preço reflete otimismo que pode ser arriscado.',
                     riscos='Risco de queda no preço se os ativos não gerarem retornos esperados. Pode haver sobrevalorização de intangíveis ou bolhas setoriais impulsionadas por hype de mercado.',
@@ -5787,7 +5785,7 @@ class PAtivoEvaluator:
             elif p_ativo > 2:
                 # Retorna ResultadoIND para sobrevalorização extrema
                 return self.gerar_resultado(
-                    classificacao='Crítico',
+                    classificacao='Excessivo',
                     faixa='P/Ativo > 2',
                     descricao='O P/Ativo é extremamente elevado, sugerindo forte sobrevalorização em relação aos ativos totais. Essa faixa é típica de bolhas de mercado, empresas de alto crescimento especulativo ou narrativas hype, onde o preço de mercado desconecta significativamente dos ativos subjacentes.',
                     riscos='Alto risco de correção acentuada no preço, com potencial para perdas significativas. Pode haver dependência de ativos intangíveis ou expectativas irreais de crescimento.',
@@ -5924,7 +5922,7 @@ class DivLiquidaPatrimonioLiquidoEvaluator:
             elif 2 < div_pl <= 3:
                 # Retorna ResultadoIND para risco financeiro alto
                 return self.gerar_resultado(
-                    classificacao='Ruim',
+                    classificacao='Baixo',
                     faixa='2 < Dívida Líquida / PL <= 3',
                     descricao='A dívida líquida é alta em relação ao patrimônio líquido, indicando que a dívida é até três vezes maior que o capital próprio. Essa faixa sugere risco financeiro significativo, comum em empresas em recuperação, com aquisições agressivas ou em setores cíclicos com alta alavancagem.',
                     riscos='Risco de default em dívidas se houver desaceleração econômica ou queda na receita. Pode haver restrições de credores, diluição acionária ou necessidade de venda de ativos.',
@@ -6061,7 +6059,7 @@ class DivLiquidaEBITEvaluator:
             elif 3 < div_ebit <= 4.5:
                 # Retorna ResultadoIND para alavancagem elevada
                 return self.gerar_resultado(
-                    classificacao='Ruim',
+                    classificacao='Baixo',
                     faixa='3 < Dívida Líquida / EBIT <= 4.5',
                     descricao='A dívida líquida é elevada em relação ao EBIT, indicando que a empresa precisaria de até 4,5 anos de lucro operacional para quitar suas dívidas. Essa faixa sugere alavancagem moderada-alta, comum em setores capital-intensivos como infraestrutura ou manufatura pesada.',
                     riscos='Risco de pressão financeira se o EBIT declinar devido a recessões ou custos crescentes. Pode haver restrições de credores ou limitações em novos investimentos.',
@@ -6184,7 +6182,7 @@ class MargemLiquidaEvaluator:
             elif 0 <= margem_liquida <= 5:
                 # Retorna ResultadoIND para rentabilidade baixa
                 return self.gerar_resultado(
-                    classificacao='Ruim',
+                    classificacao='Baixo',
                     faixa='0 <= Margem Líquida <= 5%',
                     descricao='A Margem Líquida está baixa, sugerindo rentabilidade final limitada após todos os custos e despesas. Isso é comum em setores com alta concorrência, custos elevados ou baixa escala, como varejo ou indústrias intensivas, onde a precificação é pressionada ou há encargos financeiros elevados.',
                     riscos='Risco de margens comprimidas por aumento de custos, juros altos ou impostos elevados. Pode haver vulnerabilidade a choques econômicos ou dependência de economias de escala.',
@@ -6318,7 +6316,7 @@ class MargemEBITDAEvaluator:
             elif 0 <= margem_ebitda <= 10:
                 # Retorna ResultadoIND para eficiência baixa
                 return self.gerar_resultado(
-                    classificacao='Ruim',
+                    classificacao='Baixo',
                     faixa='0 <= Margem EBITDA <= 10%',
                     descricao='A Margem EBITDA está baixa, sugerindo eficiência operacional limitada e fraca geração de caixa ajustada. Isso é comum em setores com alta concorrência, custos operacionais elevados ou baixa escala, como varejo ou indústrias de commodities, onde as margens são comprimidas.',
                     riscos='Risco de margens reduzidas por aumento de custos ou queda na receita. Pode haver vulnerabilidade a choques econômicos, como inflação de insumos, ou dependência de economias de escala.',
@@ -6454,7 +6452,7 @@ class MargemEBITEvaluator:
             elif 0 <= margem_ebit <= 5:
                 # Retorna ResultadoIND para eficiência baixa
                 return self.gerar_resultado(
-                    classificacao='Ruim',
+                    classificacao='Baixo',
                     faixa='0 <= Margem EBIT <= 5%',
                     descricao='A Margem EBIT está baixa, sugerindo eficiência operacional limitada. Isso é comum em setores com alta concorrência, custos elevados ou baixa escala, como manufatura intensiva ou varejo, onde a precificação é pressionada e os lucros operacionais são mínimos.',
                     riscos='Risco de margens comprimidas por flutuações nos custos ou demanda fraca. Pode haver dependência de economias de escala ou vulnerabilidade a choques econômicos como inflação.',
@@ -6591,7 +6589,7 @@ class MargemBrutaEvaluator:
             elif 0 <= margem_bruta <= 20:
                 # Retorna ResultadoIND para eficiência baixa
                 return self.gerar_resultado(
-                    classificacao='Ruim',
+                    classificacao='Baixo',
                     faixa='0 <= Margem Bruta <= 20%',
                     descricao='A Margem Bruta está baixa, sugerindo eficiência operacional limitada. Isso é comum em setores com alta concorrência, custos elevados ou baixa diferenciação de produtos, como varejo ou indústrias de commodities, onde a precificação é pressionada.',
                     riscos='Risco de margens comprimidas por aumento de custos ou queda na receita. Pode haver dependência de economias de escala ou vulnerabilidade a choques de mercado.',
@@ -6759,7 +6757,7 @@ class EVEBITDAEvaluator:
             elif 12 < ev_ebitda <= 16:
                 # Retorna ResultadoIND para sobrevalorização
                 return self.gerar_resultado(
-                    classificacao='Ruim',
+                    classificacao='Elevado',
                     faixa='12 < EV/EBITDA <= 16',
                     descricao='O EV/EBITDA está consideravelmente elevado, indicando sobrevalorização em relação ao lucro operacional ajustado. Essa faixa é comum em empresas com altas expectativas de crescimento ou em setores premium, mas o preço reflete otimismo significativo que pode ser arriscado se não suportado por fundamentos.',
                     riscos='Risco de queda no preço se o EBITDA declinar ou expectativas não se realizarem. Pode haver alavancagem excessiva no EV ou bolhas setoriais, com impacto em volatilidade.',
@@ -6770,7 +6768,7 @@ class EVEBITDAEvaluator:
             elif ev_ebitda > 16:
                 # Retorna ResultadoIND para sobrevalorização extrema
                 return self.gerar_resultado(
-                    classificacao='Crítico',
+                    classificacao='Excessivo',
                     faixa='EV/EBITDA > 16',
                     descricao='O EV/EBITDA é extremamente elevado, sugerindo forte sobrevalorização ou expectativas irreais de crescimento. Essa faixa é típica de bolhas de mercado, empresas de alto crescimento especulativo ou narrativas hype, onde o preço desconecta dos fundamentos operacionais ajustados.',
                     riscos='Alto risco de correção acentuada no preço, com potencial para perdas significativas. Pode haver dependência de fatores intangíveis, risco de fraudes em valuation ou alta dívida inflando o EV.',
@@ -6905,7 +6903,7 @@ class EVEBITEvaluator:
             elif 15 < ev_ebit <= 20:
                 # Retorna ResultadoIND para sobrevalorização
                 return self.gerar_resultado(
-                    classificacao='Ruim',
+                    classificacao='Baixo',
                     faixa='15 < EV/EBIT <= 20',
                     descricao='O EV/EBIT está consideravelmente elevado, indicando sobrevalorização em relação ao lucro operacional. Essa faixa é comum em empresas com altas expectativas de crescimento ou em setores premium, mas o preço reflete otimismo significativo que pode ser arriscado.',
                     riscos='Risco de queda no preço se o EBIT declinar ou expectativas não se realizarem. Pode haver alavancagem excessiva no EV ou bolhas setoriais.',
@@ -7053,7 +7051,7 @@ class DivLiquidaEBITDAEvaluator:
             elif 3 < div_ebitda <= 4:
                 # Retorna ResultadoIND para risco financeiro alto
                 return self.gerar_resultado(
-                    classificacao='Ruim',
+                    classificacao='Baixo',
                     faixa='3 < Dívida Líquida / EBITDA <= 4',
                     descricao='A dívida líquida é alta em relação ao EBITDA, sugerindo que a empresa precisaria de até quatro anos de lucro operacional para pagar suas dívidas. Essa faixa indica risco financeiro significativo, comum em empresas em recuperação ou com investimentos pesados.',
                     riscos='Risco de default em dívidas se houver desaceleração econômica ou aumento de juros. Pode haver restrições de credores ou diluição acionária para levantar capital.',
@@ -7171,7 +7169,7 @@ class LPAEvaluator:
             elif 0 <= lpa <= 1:
                 # Retorna ResultadoIND para baixa rentabilidade
                 return self.gerar_resultado(
-                    classificacao='Ruim',
+                    classificacao='Baixo',
                     faixa='0 <= LPA <= 1',
                     descricao='O LPA está baixo, sugerindo rentabilidade limitada por ação. Isso pode ocorrer em empresas em fase inicial, com altos investimentos ou em setores de baixa margem.',
                     riscos='Risco de estagnação no crescimento ou baixa capacidade de gerar valor para acionistas. Pode haver concorrência intensa ou custos operacionais elevados.',
@@ -7390,7 +7388,7 @@ class PVPEvaluator:
             elif 1.8 < p_vp <= 2.5:
                 # Retorna ResultadoIND para ação sobrevalorizada
                 return self.gerar_resultado(
-                    classificacao='Ruim',
+                    classificacao='Baixo',
                     faixa='1.8 < P/VP <= 2.5',
                     descricao='O preço da ação está consideravelmente acima do valor patrimonial, indicando sobrevalorização moderada. Essa faixa é comum em empresas com expectativas de crescimento ou em setores de alto potencial, mas o preço já reflete otimismo significativo.',
                     riscos='Risco de correção de preço se as expectativas de crescimento não se concretizarem. A empresa pode estar exposta a volatilidade de mercado ou mudanças macroeconômicas.',
@@ -7401,7 +7399,7 @@ class PVPEvaluator:
             elif 2.5 < p_vp <= 4:
                 # Retorna ResultadoIND para ação muito sobrevalorizada
                 return self.gerar_resultado(
-                    classificacao='Ruim',
+                    classificacao='Baixo',
                     faixa='2.5 < P/VP <= 4',
                     descricao='O preço da ação está significativamente elevado em relação ao patrimônio, sugerindo uma valuation arriscada. Essa faixa é típica de empresas em setores de alto crescimento, mas o preço reflete expectativas agressivas.',
                     riscos='Alta sensibilidade a mudanças econômicas, como aumento de juros ou desaceleração setorial. Falhas em atingir metas de crescimento podem levar a quedas acentuadas.',
@@ -7542,137 +7540,3 @@ if __name__ == "__main__":
     print("📦 Resultado como dicionário:")
     # Converte resultado em dicionário e imprime
     print(resultado.to_dict())
-
-
-# Função para extrair resultados e salvar em Excel
-def extract_and_save_to_excel(classes, input_values, output_file="resultados_indicadores.xlsx"):
-    # Lista para armazenar os resultados
-    results = []
-
-    # Iterar sobre as classes
-    for cls in classes:
-        # Instanciar a classe
-        evaluator = cls()
-        # Nome da classe para identificação
-        class_name = cls.__name__
-
-        # Iterar sobre os valores de entrada
-        for value in input_values:
-            try:
-                # Ajustar chamada do método avaliar com base na classe
-                if class_name == 'VPAEvaluator':
-                    resultado = evaluator.avaliar(vpa=value,
-                                                  preco_acao=None)  # Passar preco_acao como None, já que p_vpa é usado diretamente
-                else:
-                    resultado = evaluator.avaliar(value)
-
-                # Criar um dicionário com os resultados
-                result_dict = {
-                    "Classe": class_name,
-                    "Valor de Entrada": value,
-                    "Classificação": resultado.classificacao,
-                    "Faixa": resultado.faixa,
-                    "Descrição": resultado.descricao.strip(),
-                    "Definição": resultado.definicao.strip(),
-                    "Agrupador": resultado.agrupador,
-                    "Fórmula": resultado.formula,
-                    "Riscos": resultado.riscos,
-                    "Referência Cruzada": resultado.referencia_cruzada,
-                    "Recomendação": resultado.recomendacao
-                }
-                results.append(result_dict)
-            except Exception as e:
-                # Registrar erro caso ocorra
-                results.append({
-                    "Classe": class_name,
-                    "Valor de Entrada": value,
-                    "Classificação": "Erro",
-                    "Faixa": "N/A",
-                    "Descrição": f"Erro ao processar: {str(e)}",
-                    "Definição": evaluator.definicao.strip() if hasattr(evaluator, 'definicao') else "N/A",
-                    "Agrupador": evaluator.agrupador if hasattr(evaluator, 'agrupador') else "N/A",
-                    "Fórmula": evaluator.formula if hasattr(evaluator, 'formula') else "N/A",
-                    "Riscos": "N/A",
-                    "Referência Cruzada": "N/A",
-                    "Recomendação": "N/A"
-                })
-
-    # Criar DataFrame com os resultados
-    df = pd.DataFrame(results)
-
-    # Salvar no Excel
-    df.to_excel(output_file, index=False, sheet_name="Resultados")
-    print(f"Resultados salvos em {output_file}")
-
-
-# Lista de classed fornecida
-classes_list = [PEBITEvaluator, VPAEvaluator]  # EBITEvaluator incluído apenas se você fornecer o código
-
-# Lista de valores de entrada para testar (ajustada para cobrir faixas de PEBITEvaluator e VPAEvaluator)
-input_values = [-5, 0, 0.5, 1.0, 1.5, 2.0, 3.0, "invalido"]
-
-# Chamar a função para gerar o Excel
-extract_and_save_to_excel(classes_list, input_values)
-
-
-import ast
-import json
-
-def extrair_classes_e_parametros(arquivo_codigo):
-    """
-    Analisa um arquivo Python usando AST para extrair classes, métodos e seus parâmetros.
-    Retorna uma lista de dicionários com as informações.
-    """
-    with open(arquivo_codigo, 'r', encoding='utf-8') as f:
-        codigo_fonte = f.read()
-
-    # Parsear o código fonte em uma AST
-    arvore = ast.parse(codigo_fonte)
-
-    resultados = []
-
-    # Iterar sobre os nós da AST para encontrar definições de classes
-    for no in ast.walk(arvore):
-        if isinstance(no, ast.ClassDef):
-            classe_info = {
-                'classe': no.name,
-                'metodos': []
-            }
-
-            # Iterar sobre os métodos da classe
-            for corpo_no in no.body:
-                if isinstance(corpo_no, ast.FunctionDef):
-                    metodo_info = {
-                        'metodo': corpo_no.name,
-                        'parametros': []
-                    }
-
-                    # Extrair parâmetros do método
-                    for arg in corpo_no.args.args:
-                        param = arg.arg
-                        # Verificar se há anotação de tipo (ex.: tipo: str)
-                        tipo = ast.unparse(arg.annotation) if arg.annotation else None
-                        # Verificar valor padrão (default)
-                        default = None
-                        if corpo_no.args.defaults:
-                            idx = len(corpo_no.args.args) - len(corpo_no.args.defaults)
-                            if arg == corpo_no.args.args[-idx:]:
-                                default = ast.unparse(corpo_no.args.defaults.pop(0)) if corpo_no.args.defaults else None
-                        metodo_info['parametros'].append({
-                            'nome': param,
-                            'tipo': tipo,
-                            'default': default
-                        })
-
-                    classe_info['metodos'].append(metodo_info)
-
-            resultados.append(classe_info)
-
-    return resultados
-
-# Exemplo de uso: substitua pelo caminho do seu arquivo
-arquivo = 'D:\ccd.py"'  # Caminho para seu arquivo com 7.000 linhas
-info_extraida = extrair_classes_e_parametros(arquivo)
-
-# Exibir como JSON para facilitar a visualização
-print(json.dumps(info_extraida, indent=4, ensure_ascii=False))
