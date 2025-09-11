@@ -1,0 +1,8 @@
+
+font_otimo         = Font(color="00B050")  # Verde escuro → Ótimo
+font_muito_bom     = Font(color="00C000")  # Verde claro → Muito Bom
+font_bom           = Font(color="92D050")  # Verde amarelado → Bom
+font_moderado      = Font(color="FFFF00")  # Amarelo → Moderado
+font_ruim          = Font(color="FFC000")  # Laranja → Ruim
+font_critico       = Font(color="FF0000")  # Vermelho → Crítico
+font_muito_critico = Font(color="C00000")  # Vermelho escuro → Muito Crítico
