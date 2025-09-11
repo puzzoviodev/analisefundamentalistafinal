@@ -1,0 +1,19 @@
+aixa (Dívida Líquida / EBITDA)	Nota	Classificação
+0	0	Ótimo
+0.1 a 1	1	Muito Bom
+>1 a 2	2	Bom
+>2 a 3	3	Moderado
+>3 a 4	4	Ruim
+>4 a 5	5	Crítico
+>5 a 6 ou mais	6	Gravíssimo
+
+
+
+Faixa (Dívida Líquida / EBITDA)	Nota	Classificação
+0	0	Ótimo
+0.1 a 1	1	Muito Bom
+>1 a 2	2	Bom
+>2 a 3	3	Moderado
+>3 a 4	4	Ruim
+>4 a 5	5	Crítico
+>5 a 6 ou mais	6	Muito Crítico  
