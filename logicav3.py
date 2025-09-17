@@ -1,11 +1,14 @@
 import pandas as pd
 #from comoparador import LucroLiquidoEvaluator, EBITDAEvaluator, DividaBrutaEvaluator, VPAEvaluator, PLEvaluator, MargemBrutaEvaluator, PVPEvaluator, ResultadoIND
-from analiseativos import MargemEBITEvaluator, MargemEBITDAEvaluator,GiroAtivoEvaluator,\
-                          ROICEvaluator, ROAEvaluator,ROEEvaluator,LucroLiquidoEvaluator,\
-                          EBITDAEvaluator, DividaBrutaEvaluator, VPAEvaluator, PLEvaluator, \
-                          MargemBrutaEvaluator, PVPEvaluator,MargemLiquidaEvaluator,DivLiquidaPatrimonioLiquidoEvaluator,\
-                          DivLiquidaEBITDAEvaluator,DivLiquidaEBITEvaluator,ResultadoIND
+#from analiseativos import (MargemEBITEvaluator, MargemEBITDAEvaluator,GiroAtivoEvaluator,\
+#                          ROICEvaluator, ROAEvaluator,ROEEvaluator,LucroLiquidoEvaluator,\
+#                          EBITDAEvaluator, DividaBrutaEvaluator, VPAEvaluator, PLEvaluator, \
+#                          MargemBrutaEvaluator, PVPEvaluator,MargemLiquidaEvaluator,DivLiquidaPatrimonioLiquidoEvaluator,\
+#                          DivLiquidaEBITDAEvaluator,DivLiquidaEBITEvaluator,PLAtivosEvaluator,\
+#                          LiquidezCorrenteEvaluator,DividendYieldEvaluator,PatrimonioLiquidoEvaluator
+#                           )
 
+from analiseativos import *
 
 # Função para coletar resultados de todas as condições de uma classe
 def coletar_resultados_avaliacao():
@@ -110,20 +113,20 @@ def coletar_resultados_avaliacao():
         adicionar_resultado(resultado, "MargemBrutaEvaluator", f"avaliar (margem_bruta={margem})")
 
     # 7. Testes para PVPEvaluator
-    pvp_evaluator = PVPEvaluator()
-    testes_pvp = [
-        (-1, "Negativo"),  # P/VP < 0
-        (0.5, "Ótimo"),  # 0 <= P/VP <= 0.8
-        (1.0, "Bom"),  # 0.8 < P/VP <= 1.2
-        (1.5, "Moderado"),  # 1.2 < P/VP <= 1.8
-        (2.0, "Elevado"),  # 1.8 < P/VP <= 2.5
-        (3.0, "Alto"),  # 2.5 < P/VP <= 4
+    PVPE_evaluator = PVPEvaluator()
+    testes_PVPEvaluator = [
+        (-1, "Crítico"),  # 'P/VP < 0',
+        (0.5, "Ótimo"),  # '0 <= P/VP <= 0.8',
+        (1.0, "Bom"),  # '0.8 < P/VP <= 1.2',
+        (1.5, "Moderado"),  # '1.2 < P/VP <= 1.8',
+        (2.0, "Ruim"),  # '1.8 < P/VP <= 2.5',
+        (3.0, "Alto"),  # '2.5 < P/VP <= 4',
         (5.0, "Excessivo"),  # P/VP > 4
         ("invalido", "Erro")  # Entrada inválida
     ]
-    for pvp, condicao in testes_pvp:
-        resultado = pvp_evaluator.avaliar(pvp)
-        adicionar_resultado(resultado, "PVPEvaluator", f"avaliar (p_vp={pvp})")
+    for PVPE, condicao in testes_PVPEvaluator:
+        resultado = PVPE_evaluator.avaliar(PVPE)
+        adicionar_resultado(resultado, "PVPEvaluator", f"avaliar (p_vp={PVPE})")
 
      # 8. Testes para ROEEvaluator
     ROE_evaluator = ROEEvaluator()
@@ -238,12 +241,12 @@ def coletar_resultados_avaliacao():
             (1.1, "Moderado"),  # '1 < Dívida Líquida / PL <= 2',
             (0.1, "Bom"),  # '0.5 < Dívida Líquida / PL <= 1',
             (-1, "Ótimo"),  # ''Dívida Líquida / PL < 0',
-            (1, "Ótimo"),  # '''0 <= Dívida Líquida / PL <= 0.5',
+            (1, "Muito Bom"),  # '''0 <= Dívida Líquida / PL <= 0.5',
             ("invalido", "Erro")  # Entrada inválida
         ]
         for DivLiquidaPatrimonioLiquido, condicao in testes_DivLiquidaPatrimonioLiquido:
             resultado = DivLiquidaPatrimonioLiquido_evaluator.avaliar(DivLiquidaPatrimonioLiquido)
-            adicionar_resultado(resultado, "DivLiquidaPatrimonioLiquido", f"avaliar (lucro={DivLiquidaPatrimonioLiquido})")
+            adicionar_resultado(resultado, "DivLiquidaPatrimonioLiquidoEvaluator", f"avaliar (lucro={DivLiquidaPatrimonioLiquido})")
 
         # 16 . Testes para DivLiquidaEBITDAEvaluator
         DivLiquidaEBITDA_evaluator = DivLiquidaEBITDAEvaluator()
@@ -253,13 +256,13 @@ def coletar_resultados_avaliacao():
             (3.1, "Ruim"),  # '3 < Dívida Líquida / EBITDA <= 4',
             (2.1, "Moderado"),  # '2 < Dívida Líquida / EBITDA <= 3',
             (1.1, "Bom"),  # '1 < Dívida Líquida / EBITDA <= 2',
-            (-21, "Ótimo"),  # '0 <= Dívida Líquida / EBITDA <= 1',
+            (-21, "Muito Bom"),  # '0 <= Dívida Líquida / EBITDA <= 1',
             (-1, "Ótimo"),  # 'Dívida Líquida / EBITDA < 0',
             ("invalido", "Erro")  # Entrada inválida
         ]
         for DivLiquidaEBITDA, condicao in testes_DivLiquidaEBITDA:
             resultado = DivLiquidaEBITDA_evaluator.avaliar(DivLiquidaEBITDA)
-            adicionar_resultado(resultado, "DivLiquidaEBITDA",
+            adicionar_resultado(resultado, "DivLiquidaEBITDAEvaluator",
                                 f"avaliar (lucro={DivLiquidaEBITDA})")
 
             # 17 . Testes para DivLiquidaEBITDAEvaluator
@@ -268,9 +271,9 @@ def coletar_resultados_avaliacao():
         testes_DivLiquidaEBIT = [
             (5, "Crítico"),  # ''4.5 < Dívida Líquida / EBIT <= 6',
             (3.1, "Ruim"),  # '3 < Dívida Líquida / EBIT <= 4.5',
-            (3.1, "Moderado"),  # ''3 < Dívida Líquida / EBIT <= 4.5',
-            (1.5, "Bom"),  # '1.5 < Dívida Líquida / EBIT <= 3',
-            (7, "Crítico"),  # 'Dívida Líquida / EBIT > 6',
+            (3, "Moderado"),  # '1.5 < Dívida Líquida / EBIT <= 3',
+            (1.5, "Bom"),  # '0 <= Dívida Líquida / EBIT <= 1.5',
+            (7, "Muito Crítico"),  # 'Dívida Líquida / EBIT > 6',
             (-1, "Ótimo"),  # 'Dívida Líquida / EBIT < 0',
             ("invalido", "Erro")  # Entrada inválida
         ]
@@ -278,11 +281,73 @@ def coletar_resultados_avaliacao():
             resultado = DivLiquidaEBIT_evaluator.avaliar(DivLiquidaEBIT)
             adicionar_resultado(resultado, "DivLiquidaEBIT",
                                 f"avaliar (lucro={DivLiquidaEBIT})")
+            # 18 . Testes para PLAtivosEvaluator
+        PLAtivos_evaluator = PLAtivosEvaluator()
 
+        testes_PLAtivos = [
+            (-5, "Crítico"),  # 'PL/Ativos < 0',
+            (0.1, "Ruim"),  # '0 <= PL/Ativos <= 0.2',
+            (0.2, "Moderado"),  # ''0.2 < PL/Ativos <= 0.4',
+            (0.4, "Bom"),  # '0.4 < PL/Ativos <= 0.6',
+            (0.7, "Ótimo"),  # 'PL/Ativos > 0.6',
+            ("invalido", "Erro")  # Entrada inválida
+        ]
+        for PLAtivos, condicao in testes_PLAtivos:
+            resultado = PLAtivos_evaluator.avaliar(PLAtivos)
+            adicionar_resultado(resultado, "PLAtivos",
+                                f"avaliar (lucro={PLAtivosEvaluator})")
+
+        # 19 . Testes para DividendYieldEvaluator
+        DividendYieldEvaluator_evaluator = DividendYieldEvaluator()
+
+        testes_DividendYieldEvaluator = [
+            (-5, "Muito Crítico"),  # Dividend Yield < 0%',
+            (0, "Crítico"),  # 'Dividend Yield = 0%',
+            (1, "Ruim"),  # '0 < Dividend Yield <= 2%',
+            (2, "Moderado"),  # '2 < Dividend Yield <= 4%',
+            (5, "Bom"),  # '4 < Dividend Yield <= 6%',
+            (7, "Ótimo"),  # 'Dividend Yield > 6%',
+            ("invalido", "Erro")  # Entrada inválida
+        ]
+        for DividendYield, condicao in testes_DividendYieldEvaluator:
+            resultado = DividendYieldEvaluator_evaluator.avaliar(DividendYield)
+            adicionar_resultado(resultado, "DividendYieldEvaluator",
+                                f"avaliar (lucro={DividendYield})")
+
+            # 20 . Testes para LiquidezCorrenteEvaluator
+        LiquidezCorrenteEvaluator_evaluator = LiquidezCorrenteEvaluator()
+
+        testes_LiquidezCorrenteEvaluator = [
+                (-5, "Crítico"),  # 'Liquidez Corrente < 0',
+                (0.1, "Ruim"),  # '0 <= Liquidez Corrente < 0.8',
+                (0.9, "Moderado"),  # '0.8 <= Liquidez Corrente < 1.2',
+                (1.4, "Bom"),  # '1.2 <= Liquidez Corrente <= 2.0',
+                (2.1, "Ótimo"),  # ''Liquidez Corrente > 2.0',
+                ("invalido", "Erro")  # Entrada inválida
+            ]
+        for LiquidezCorrente, condicao in testes_LiquidezCorrenteEvaluator:
+                resultado = LiquidezCorrenteEvaluator_evaluator.avaliar(LiquidezCorrente)
+                adicionar_resultado(resultado, "LiquidezCorrenteEvaluator",
+                                    f"avaliar (lucro={LiquidezCorrente})")
+                # 21 . Testes para LiquidezCorrenteEvaluator
+        PatrimonioLiquidoEvaluator_evaluator = PatrimonioLiquidoEvaluator()
+
+        testes_PatrimonioLiquidoEvaluator = [
+            (-5, "Crítico"),  # 'Patrimônio Líquido < 0',
+            (0.1, "Ruim"),  # '0 <= Patrimônio Líquido / Ativos <= 0.2',
+            (0.2, "Moderado"),  # '0.2 < Patrimônio Líquido / Ativos <= 0.4',
+            (0.5, "Bom"),  # 0.4 < Patrimônio Líquido / Ativos <= 0.6',
+            (1, "Ótimo"),  # 'Patrimônio Líquido / Ativos > 0.6',
+            ("invalido", "Erro")  # Entrada inválida
+        ]
+        for PatrimonioLiquido, condicao in testes_PatrimonioLiquidoEvaluator:
+            resultado = PatrimonioLiquidoEvaluator_evaluator.avaliar(PatrimonioLiquido)
+            adicionar_resultado(resultado, "PatrimonioLiquidoEvaluator",
+                                f"avaliar (lucro={PatrimonioLiquido})")
 
     return resultados
 
-
+#
 
 
 

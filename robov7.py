@@ -210,81 +210,90 @@ def gravaIndiEficiênciaoStaus(wsIndiRentabilidade, dict_stocks, stock):
                            'Free Float']:
 
 
-                if metrica == 'ROE':
+                if metrica == 'ROE': # OK LOGV3
                    indicador = dict_stocks[stock].get(metrica)
                    valor_pl = tratamento_indicador_combinado(indicador)
                    avaliador =  ROEEvaluator()
                    resultado = avaliador.avaliar(valor_pl)
-                elif metrica == 'ROA':
+
+                elif metrica == 'ROA': # OK LOGV3
                    indicador = dict_stocks[stock].get(metrica)
                    valor_pl = tratamento_indicador_combinado(indicador)
                    avaliador = ROAEvaluator()
                    resultado = avaliador.avaliar(valor_pl)
-                elif metrica == 'ROIC':
+
+                elif metrica == 'ROIC':  # OK LOGV3
                    indicador = dict_stocks[stock].get(metrica)
                    valor_pl = tratamento_indicador_combinado(indicador)
                    avaliador = ROICEvaluator()
                    resultado = avaliador.avaliar(valor_pl)
-                elif metrica == 'Giro ativos':
+
+                elif metrica == 'Giro ativos': # OK LOGV3
                    indicador = dict_stocks[stock].get(metrica)
                    valor_pl = tratamento_indicador_combinado(indicador)
                    avaliador =  GiroAtivoEvaluator()
                    resultado = avaliador.avaliar(valor_pl)
-                elif metrica == 'M. Bruta':
+
+                elif metrica == 'M. Bruta': # OK LOGV3
                     indicador = dict_stocks[stock].get(metrica)
                     valor_pl = tratamento_indicador_combinado(indicador)
                     avaliador =  MargemBrutaEvaluator()
                     resultado = avaliador.avaliar(valor_pl)
-                elif metrica == 'M. EBITDA':
+
+                elif metrica == 'M. EBITDA':# OK LOGV3
                     indicador = dict_stocks[stock].get(metrica)
                     valor_pl = tratamento_indicador_combinado(indicador)
                     avaliador =  MargemEBITDAEvaluator()
                     resultado = avaliador.avaliar(valor_pl)
-                elif metrica == 'M. EBIT':
+
+                elif metrica == 'M. EBIT': # OK LOGV3
                     indicador = dict_stocks[stock].get(metrica)
                     valor_pl = tratamento_indicador_combinado(indicador)
                     avaliador = MargemEBITEvaluator()
                     resultado = avaliador.avaliar(valor_pl)
-                elif metrica == 'M. Liquida':
+                elif metrica == 'M. Liquida': # OK LOGV3
                     indicador = dict_stocks[stock].get(metrica)
                     valor_pl = tratamento_indicador_combinado(indicador)
                     avaliador = MargemLiquidaEvaluator()
                     resultado = avaliador.avaliar(valor_pl)
-                elif metrica == 'Div. liquida/PL':
+
+                elif metrica == 'Div. liquida/PL': # OK LOGV3
                     indicador = dict_stocks[stock].get(metrica)
                     valor_pl = tratamento_indicador_combinado(indicador)
                     avaliador = DivLiquidaPatrimonioLiquidoEvaluator()
                     resultado = avaliador.avaliar(valor_pl)
 
-                elif metrica == 'Div. liquida/EBITDA':
+                elif metrica == 'Div. liquida/EBITDA':# OK LOGV3
                     indicador = dict_stocks[stock].get(metrica)
                     valor_pl = tratamento_indicador_combinado(indicador)
                     avaliador = DivLiquidaEBITDAEvaluator()
                     resultado = avaliador.avaliar(valor_pl)
-                elif metrica == 'Div. liquida/EBIT':
+
+                elif metrica == 'Div. liquida/EBIT': # OK LOGV3
                     indicador = dict_stocks[stock].get(metrica)
                     valor_pl = tratamento_indicador_combinado(indicador)
                     avaliador = DivLiquidaEBITEvaluator()
                     resultado = avaliador.avaliar(valor_pl)
 
-                elif metrica == 'PL/Ativos':
+                elif metrica == 'PL/Ativos': # OK LOGV3
                     indicador = dict_stocks[stock].get(metrica)
                     valor_pl = tratamento_indicador_combinado(indicador)
                     avaliador = PLAtivosEvaluator()
                     resultado = avaliador.avaliar(valor_pl)
 
-                elif metrica == 'Liq. corrente':
+                elif metrica == 'Liq. corrente': # OK LOGV3
                     indicador = dict_stocks[stock].get(metrica)
                     valor_pl = tratamento_indicador_combinado(indicador)
                     avaliador = LiquidezCorrenteEvaluator()
                     resultado = avaliador.avaliar(valor_pl)
-                elif metrica == 'D.Y':
+
+                elif metrica == 'D.Y': # OK LOGV3
                     indicador = dict_stocks[stock].get(metrica)
                     valor_pl = tratamento_indicador_combinado(indicador)
                     avaliador = DividendYieldEvaluator()
                     resultado = avaliador.avaliar(valor_pl)
 
-                elif metrica == 'P/L':
+                elif metrica == 'P/L': # OK LOGV3
                     indicador = dict_stocks[stock].get(metrica)
                     valor_pl = tratamento_indicador_combinado(indicador)
                     avaliador = PatrimonioLiquidoEvaluator()
@@ -457,7 +466,12 @@ def gravaIndiEficiênciaoStaus(wsIndiRentabilidade, dict_stocks, stock):
             if  classificacao == 'Ótimo':
                 wsIndiRentabilidade.cell(row=linha2, column=9, value=classificacao).fill = fillverde
                 wsIndiRentabilidade.cell(row=linha2, column=10, value=faixa)
-
+            if  classificacao == 'Muito Bom':
+                wsIndiRentabilidade.cell(row=linha2, column=9, value=classificacao).fill = fillverde
+                wsIndiRentabilidade.cell(row=linha2, column=10, value=faixa)
+            if classificacao == 'Muito Crítico':
+               wsIndiRentabilidade.cell(row=linha2, column=9, value=classificacao).fill = fillverde
+               wsIndiRentabilidade.cell(row=linha2, column=10, value=faixa)
 
 
 

@@ -159,3 +159,36 @@ if __name__ == "__main__":
 
     # Exportar para Excel
     exportar_para_excel(resultados)
+
+    # 19 . Testes para LiquidezCorrenteEvaluator
+    LiquidezCorrenteEvaluator_evaluator = LiquidezCorrenteEvaluator()
+
+    testes_LiquidezCorrenteEvaluator = [
+        (-5, "Crítico"),  # 'Liquidez Corrente < 0',
+        (0.1, "Ruim"),  # '0 <= Liquidez Corrente < 0.8',
+        (0.9, "Moderado"),  # '0.8 <= Liquidez Corrente < 1.2',
+        (1.4, "Bom"),  # '1.2 <= Liquidez Corrente <= 2.0',
+        (2.1, "Ótimo"),  # ''Liquidez Corrente > 2.0',
+        ("invalido", "Erro")  # Entrada inválida
+    ]
+    for LiquidezCorrente, condicao in testes_LiquidezCorrenteEvaluator:
+        resultado = LiquidezCorrenteEvaluator_evaluator.avaliar(LiquidezCorrente)
+        adicionar_resultado(resultado, "LiquidezCorrenteEvaluator",
+                            f"avaliar (lucro={LiquidezCorrente})")
+
+        # 19 . Testes para DividendYieldEvaluator
+    DividendYieldEvaluator_evaluator = DividendYieldEvaluator()
+
+    testes_DividendYieldEvaluator = [
+        (-5, "Muito Crítico"),  # Dividend Yield < 0%',
+        (0, "Crítico"),  # 'Dividend Yield = 0%',
+        (1, "Ruim"),  # '0 < Dividend Yield <= 2%',
+        (2, "Moderado"),  # '2 < Dividend Yield <= 4%',
+        (5, "Bom"),  # '4 < Dividend Yield <= 6%',
+        (7, "Ótimo"),  # 'Dividend Yield > 6%',
+        ("invalido", "Erro")  # Entrada inválida
+    ]
+    for DividendYieldEvaluator, condicao in testes_DividendYieldEvaluator:
+        resultado = DividendYieldEvaluator_evaluator.avaliar(DividendYieldEvaluator)
+        adicionar_resultado(resultado, "DividendYieldEvaluator",
+                            f"avaliar (lucro={DividendYieldEvaluator})")

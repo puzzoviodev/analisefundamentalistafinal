@@ -3873,7 +3873,7 @@ class DividendYieldEvaluator:
             if dividend_yield < 0:
                 # Retorna ResultadoIND para Dividend Yield negativo
                 return self.gerar_resultado(
-                    classificacao='Crítico',
+                    classificacao='Muito Crítico',
                     faixa='Dividend Yield < 0%',
                     descricao='Um Dividend Yield negativo é inválido, indicando dividendos negativos ou erros nos dados financeiros. Isso pode ocorrer em empresas que não pagam dividendos ou com problemas contábeis, inviabilizando a análise de retorno de dividendos.',
                     riscos='Risco de manipulação contábil ou ausência de política de dividendos. Pode haver baixa confiabilidade nos dados financeiros ou instabilidade operacional.',
@@ -5889,7 +5889,7 @@ class DivLiquidaPatrimonioLiquidoEvaluator:
             elif 0 <= div_pl <= 0.5:
                 # Retorna ResultadoIND para baixa alavancagem
                 return self.gerar_resultado(
-                    classificacao='Ótimo',
+                    classificacao='Muito Bom',
                     faixa='0 <= Dívida Líquida / PL <= 0.5',
                     descricao='A dívida líquida é muito baixa em relação ao patrimônio líquido, indicando que a empresa financia a maior parte de suas operações com capital próprio. Isso sugere solvência forte, baixa dependência de dívida e resiliência financeira, comum em empresas maduras ou com fluxo de caixa robusto.',
                     riscos='Risco de subalavancagem, onde a empresa perde oportunidades de crescimento via dívida barata. Pode haver conservadorismo excessivo ou setores de baixa intensidade de capital.',
@@ -6037,7 +6037,7 @@ class DivLiquidaEBITEvaluator:
             elif 0 <= div_ebit <= 1.5:
                 # Retorna ResultadoIND para baixa alavancagem
                 return self.gerar_resultado(
-                    classificacao='Ótimo',
+                    classificacao='Bom',
                     faixa='0 <= Dívida Líquida / EBIT <= 1.5',
                     descricao='A dívida líquida é muito baixa em relação ao EBIT, indicando que a empresa pode quitar suas dívidas com menos de 1,5 anos de lucro operacional. Isso sugere solvência forte, baixa dependência de financiamento externo e capacidade de suportar crises, comum em empresas maduras com fluxos estáveis.',
                     riscos='Risco de subalavancagem, onde a empresa perde oportunidades de crescimento via dívida barata. Pode haver conservadorismo excessivo ou setores de baixa intensidade de capital.',
@@ -6048,7 +6048,7 @@ class DivLiquidaEBITEvaluator:
             elif 1.5 < div_ebit <= 3:
                 # Retorna ResultadoIND para alavancagem moderada
                 return self.gerar_resultado(
-                    classificacao='Bom',
+                    classificacao='Moderado',
                     faixa='1.5 < Dívida Líquida / EBIT <= 3',
                     descricao='A dívida líquida é moderada em relação ao EBIT, sugerindo que a empresa pode quitar suas dívidas em até três anos de lucro operacional. Essa faixa indica alavancagem equilibrada, permitindo crescimento sem risco financeiro excessivo, comum em empresas em expansão controlada.',
                     riscos='Risco de aumento nos custos de juros se as taxas subirem ou EBIT cair. Pode haver dependência de financiamento para operações ou limitações em novos investimentos.',
@@ -6081,7 +6081,7 @@ class DivLiquidaEBITEvaluator:
             elif div_ebit > 6:
                 # Retorna ResultadoIND para risco financeiro crítico
                 return self.gerar_resultado(
-                    classificacao='Crítico',
+                    classificacao='Muito Crítico',
                     faixa='Dívida Líquida / EBIT > 6',
                     descricao='A dívida líquida é extremamente alta em relação ao EBIT, indicando que a empresa precisaria de mais de seis anos de lucro operacional para quitar suas dívidas. Essa faixa sugere alavancagem excessiva e vulnerabilidade financeira, comum em empresas em crise ou com expansões mal planejadas.',
                     riscos='Alto risco de insolvência, reestruturação de dívida ou falência. Pode haver custos elevados de juros, redução de investimentos e impacto severo na cotação das ações.',
@@ -7018,7 +7018,7 @@ class DivLiquidaEBITDAEvaluator:
             elif 0 <= div_ebitda <= 1:
                 # Retorna ResultadoIND para baixa alavancagem
                 return self.gerar_resultado(
-                    classificacao='Ótimo',
+                    classificacao='Muito Bom',
                     faixa='0 <= Dívida Líquida / EBITDA <= 1',
                     descricao='A dívida líquida é baixa em relação ao EBITDA, indicando que a empresa pode pagar suas dívidas com menos de um ano de lucro operacional. Isso sugere solvência forte e baixa dependência de financiamento externo, comum em empresas maduras com fluxo de caixa estável.',
                     riscos='Risco de subalavancagem, onde a empresa perde oportunidades de crescimento via dívida barata. Pode haver conservadorismo excessivo ou setores com baixa necessidade de capital.',
@@ -7399,7 +7399,7 @@ class PVPEvaluator:
             elif 2.5 < p_vp <= 4:
                 # Retorna ResultadoIND para ação muito sobrevalorizada
                 return self.gerar_resultado(
-                    classificacao='Ruim',
+                    classificacao='Crítico',
                     faixa='2.5 < P/VP <= 4',
                     descricao='O preço da ação está significativamente elevado em relação ao patrimônio, sugerindo uma valuation arriscada. Essa faixa é típica de empresas em setores de alto crescimento, mas o preço reflete expectativas agressivas.',
                     riscos='Alta sensibilidade a mudanças econômicas, como aumento de juros ou desaceleração setorial. Falhas em atingir metas de crescimento podem levar a quedas acentuadas.',
