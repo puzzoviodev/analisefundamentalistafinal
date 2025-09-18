@@ -4729,7 +4729,6 @@ class VPAEvaluator:
             #p_vpa = preco_acao / vpa
             # Verifica se P/VPA é negativo, indicando patrimônio líquido negativo
             if p_vpa < 0:
-                # Retorna ResultadoIND para P/VPA negativo
                 return self.gerar_resultado(
                     classificacao='Muito Crítico',
                     faixa='P/VPA < 0',
@@ -4738,9 +4737,9 @@ class VPAEvaluator:
                     referencia='Avalie evaluate_roe para rentabilidade patrimonial, evaluate_div_liquida_pl para alavancagem e evaluate_cash_flow para geração de caixa.',
                     recomendacao='Evite investir até que a empresa demonstre recuperação patrimonial. Priorize análise de turnaround e saúde financeira.'
                 )
+
             # Verifica se P/VPA está entre 0 e 0.8, indicando forte subvalorização
             elif 0 <= p_vpa <= 0.8:
-                # Retorna ResultadoIND para forte subvalorização
                 return self.gerar_resultado(
                     classificacao='Ótimo',
                     faixa='0 <= P/VPA <= 0.8',
@@ -4749,42 +4748,42 @@ class VPAEvaluator:
                     referencia='Analise evaluate_p_l para comparação de lucros, evaluate_roe para rentabilidade e evaluate_debt_to_assets para alavancagem.',
                     recomendacao='Considere investir, mas verifique a qualidade dos ativos e a rentabilidade patrimonial. Avalie se a subvalorização é temporária ou estrutural.'
                 )
+
             # Verifica se P/VPA está entre 0.8 e 1.2, indicando valuation equilibrado
-            elif 0.9 <= p_vpa <= 1.2:
-                # Retorna ResultadoIND para valuation equilibrado
+            elif 0.8 < p_vpa <= 1.2:
                 return self.gerar_resultado(
                     classificacao='Bom',
-                    faixa='0.9 <= P/VPA <= 1.2',
+                    faixa='0.8 < P/VPA <= 1.2',
                     descricao='O P/VPA está em uma faixa equilibrada, sugerindo que o preço da ação está alinhado com o valor patrimonial por ação. Essa faixa é comum em empresas estáveis com patrimônio sólido e rentabilidade moderada, refletindo confiança do mercado sem prêmios excessivos.',
                     riscos='Risco de estagnação no preço se a rentabilidade patrimonial não melhorar. Pode haver dependência de fatores macroeconômicos que afetem o valor de mercado.',
                     referencia='Compare com evaluate_p_l para valuation de lucros, evaluate_margem_liquida para eficiência e evaluate_peg_ratio para crescimento.',
                     recomendacao='Avalie o histórico de rentabilidade e estratégias de crescimento antes de investir. Pode ser uma boa opção para investidores que buscam estabilidade.'
                 )
+
             # Verifica se P/VPA está entre 1.2 e 1.8, indicando valuation moderado
-            elif 1.3 <= p_vpa <= 1.8:
-                # Retorna ResultadoIND para valuation moderado
+            elif 1.2 < p_vpa <= 1.8:
                 return self.gerar_resultado(
                     classificacao='Moderado',
-                    faixa='1.3 <= P/VPA <= 1.8',
+                    faixa='1.2 < P/VPA <= 1.8',
                     descricao='O P/VPA está moderadamente elevado, indicando que o mercado atribui um prêmio ao valor patrimonial por ação. Essa faixa sugere expectativas de crescimento ou confiança nos ativos, comum em empresas com potencial moderado ou em setores com margens estáveis.',
                     riscos='Risco de correção no preço se a rentabilidade patrimonial não atender às expectativas. Pode haver sobrevalorização de ativos intangíveis ou dependência de setores cíclicos.',
                     referencia='Verifique evaluate_p_ebitda para valuation operacional, evaluate_roe para retorno patrimonial e evaluate_beta para volatilidade.',
                     recomendacao='Considere esperar por sinais de crescimento ou redução no valuation antes de investir. Combine com análise de fluxo de caixa e qualidade dos ativos.'
                 )
+
             # Verifica se P/VPA está entre 1.8 e 2.5, indicando sobrevalorização
-            elif 1.9 <= p_vpa <= 2.5:
-                # Retorna ResultadoIND para sobrevalorização
+            elif 1.8 < p_vpa <= 2.5:
                 return self.gerar_resultado(
                     classificacao='Ruim',
-                    faixa='1.9 <= P/VPA <= 2.5',
+                    faixa='1.8 < P/VPA <= 2.5',
                     descricao='O P/VPA está consideravelmente elevado, indicando sobrevalorização em relação ao valor patrimonial por ação. Essa faixa é comum em empresas com altas expectativas de crescimento ou em setores premium, mas o preço reflete otimismo significativo que pode ser arriscado se não sustentado.',
                     riscos='Risco de queda no preço se os ativos não gerarem retornos esperados. Pode haver sobrevalorização de intangíveis ou bolhas setoriais impulsionadas por hype de mercado.',
                     referencia='Combine com evaluate_psr para receita, evaluate_margem_liquida para eficiência e evaluate_cash_conversion_cycle para ciclo de caixa.',
                     recomendacao='Monitore catalisadores de crescimento e relatórios trimestrais. Invista com cautela, priorizando empresas com ativos produtivos e rentabilidade sólida.'
                 )
+
             # Verifica se P/VPA excede 2.5, indicando sobrevalorização extrema
             elif p_vpa > 2.5:
-                # Retorna ResultadoIND para sobrevalorização extrema
                 return self.gerar_resultado(
                     classificacao='Crítico',
                     faixa='P/VPA > 2.5',
@@ -4792,8 +4791,7 @@ class VPAEvaluator:
                     riscos='Alto risco de correção acentuada no preço, com potencial para perdas significativas. Pode haver dependência de ativos intangíveis ou expectativas irreais de crescimento.',
                     referencia='Analise evaluate_dividend_yield para rendimentos, evaluate_beta para volatilidade e evaluate_growth_rate para taxas de crescimento.',
                     recomendacao='Não invista devido ao risco elevado de perdas. Considere vender posições existentes e buscar alternativas com valuation mais razoável.'
-                )
-        # Captura exceções para entradas inválidas (ex.: não numéricas)
+                )# Captura exceções para entradas inválidas (ex.: não numéricas)
         except Exception as e:
             # Retorna ResultadoIND com mensagem de erro
             return self._erro(mensagem=str(e))

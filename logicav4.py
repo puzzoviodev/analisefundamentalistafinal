@@ -71,8 +71,8 @@ def coletar_resultados_avaliacao():
     preco_acao = 10  # Valor fixo para preço da ação
     testes_vpa = [
         (-1, "Muito Crítico"),  # P/VPA < 0
-        (0.8, "Ótimo"),  # 0 <= P/VPA <= 0.8
-        (0.9, "Bom"),  # 0.8 < P/VPA <= 1.2
+        (0.85, "Ótimo"),  # 0 <= P/VPA <= 0.8
+        (0.8, "Bom"),  # 0.8 < P/VPA <= 1.2
         (1.3, "Moderado"),  # 1.2 < P/VPA <= 1.8
         (1.9, "Ruim"),  # 1.8 < P/VPA <= 2.5
         (2.6, "Crítico"),  # P/VPA > 2.5
