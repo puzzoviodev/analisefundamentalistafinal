@@ -299,49 +299,49 @@ def gravaIndiEficiênciaoStaus(wsIndiRentabilidade, dict_stocks, stock):
                     avaliador = PatrimonioLiquidoEvaluator()
                     resultado = avaliador.avaliar(valor_pl,1)
 
-                elif metrica == 'P/VP':
+                elif metrica == 'P/VP': # OK LOGV3
                     indicador = dict_stocks[stock].get(metrica)
                     valor_pl = tratamento_indicador_combinado(indicador)
                     avaliador = PVPEvaluator()
                     resultado = avaliador.avaliar(valor_pl)
 
-                elif metrica == 'EV/EBITDA':
+                elif metrica == 'EV/EBITDA': # OK LOGV3
                     indicador = dict_stocks[stock].get(metrica)
                     valor_pl = tratamento_indicador_combinado(indicador)
                     avaliador = EVEBITDAEvaluator()
                     resultado = avaliador.avaliar(valor_pl)
 
-                elif metrica == 'EV/EBIT':
+                elif metrica == 'EV/EBIT': # OK LOGV3
                     indicador = dict_stocks[stock].get(metrica)
                     valor_pl = tratamento_indicador_combinado(indicador)
                     avaliador = EVEBITEvaluator()
                     resultado = avaliador.avaliar(valor_pl)
 
-                elif metrica == 'P/EBITDA':
+                elif metrica == 'P/EBITDA':# OK LOGV3
                     indicador = dict_stocks[stock].get(metrica)
                     valor_pl = tratamento_indicador_combinado(indicador)
                     avaliador = PEBITDAEvaluator()
                     resultado = avaliador.avaliar(valor_pl)
 
-                elif metrica == 'P/EBIT':
+                elif metrica == 'P/EBIT': # OK LOGV3
                     indicador = dict_stocks[stock].get(metrica)
                     valor_pl = tratamento_indicador_combinado(indicador)
                     avaliador = PEBITEvaluator()
                     resultado = avaliador.avaliar(valor_pl)
 
-                elif metrica == 'VPA':
+                elif metrica == 'VPA': # OK LOGV3
                     indicador = dict_stocks[stock].get(metrica)
                     valor_pl = tratamento_indicador_combinado(indicador)
                     avaliador = VPAEvaluator()
                     resultado = avaliador.avaliar(valor_pl,0)
 
-                elif metrica == 'P/Ativo':
+                elif metrica == 'P/Ativo': # OK LOGV3
                     indicador = dict_stocks[stock].get(metrica)
                     valor_pl = tratamento_indicador_combinado(indicador)
                     avaliador = PAtivoEvaluator()
                     resultado = avaliador.avaliar(valor_pl)
 
-                elif metrica == 'LPA':
+                elif metrica == 'LPA': # OK LOGV3
                     indicador = dict_stocks[stock].get(metrica)
                     valor_pl = tratamento_indicador_combinado(indicador)
                     avaliador = LPAEvaluator()

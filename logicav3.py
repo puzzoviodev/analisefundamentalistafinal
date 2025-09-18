@@ -71,8 +71,8 @@ def coletar_resultados_avaliacao():
     vpa_evaluator = VPAEvaluator()
     preco_acao = 10  # Valor fixo para preço da ação
     testes_vpa = [
-        (-1, "Crítico"),  # P/VPA < 0
-        (0.1, "Ótimo"),  # 0 <= P/VPA <= 0.8
+        (-1, "Muito Crítico"),  # P/VPA < 0
+         (0.1, "Ótimo"),  # 0 <= P/VPA <= 0.8
         (1.1, "Bom"),  # 0.8 < P/VPA <= 1.2
         (1.3, "Moderado"),  # 1.2 < P/VPA <= 1.8
         (1.9, "Ruim"),  # 1.8 < P/VPA <= 2.5
@@ -115,13 +115,13 @@ def coletar_resultados_avaliacao():
     # 7. Testes para PVPEvaluator
     PVPE_evaluator = PVPEvaluator()
     testes_PVPEvaluator = [
-        (-1, "Crítico"),  # 'P/VP < 0',
+        (-1, "Muito Crítico"),  # 'P/VP < 0',
         (0.5, "Ótimo"),  # '0 <= P/VP <= 0.8',
         (1.0, "Bom"),  # '0.8 < P/VP <= 1.2',
         (1.5, "Moderado"),  # '1.2 < P/VP <= 1.8',
         (2.0, "Ruim"),  # '1.8 < P/VP <= 2.5',
-        (3.0, "Alto"),  # '2.5 < P/VP <= 4',
-        (5.0, "Excessivo"),  # P/VP > 4
+        (3.0, "Crítico"),  # '2.5 < P/VP <= 4',
+        (5.0, "Crítico"),  # 'P/VP > 4',
         ("invalido", "Erro")  # Entrada inválida
     ]
     for PVPE, condicao in testes_PVPEvaluator:
@@ -218,9 +218,9 @@ def coletar_resultados_avaliacao():
         adicionar_resultado(resultado, "MargemEBITEvaluator", f"avaliar (lucro={MargemEBITE})")
 
         # 14 . Testes para MargemLiquidaEvaluator
-        MargemLiquida_evaluator = MargemLiquidaEvaluator()
+    MargemLiquida_evaluator = MargemLiquidaEvaluator()
 
-        testes_MargemLiquida = [
+    testes_MargemLiquida = [
             (-10, "Crítico"),  # 'Margem Líquida < 0%',
             (1, "Ruim"),  # ''0 <= Margem Líquida <= 5%',
             (11, "Moderado"),  # '5 < Margem Líquida <= 15%',
@@ -344,10 +344,115 @@ def coletar_resultados_avaliacao():
             resultado = PatrimonioLiquidoEvaluator_evaluator.avaliar(PatrimonioLiquido)
             adicionar_resultado(resultado, "PatrimonioLiquidoEvaluator",
                                 f"avaliar (lucro={PatrimonioLiquido})")
+             # 22 . Testes para EVEBITDAEvaluatorEvaluator
+
+        EVEBITDAE_evaluator = EVEBITDAEvaluator()
+
+        testes_EVEBITDAEvaluator = [
+            (-1, "Muito Crítico"),  # 'EV/EBITDA < 0',
+            (17, "Crítico"), #"'EV/EBITDA > 16',
+            (13, "Ruim"),  # '12 < EV/EBITDA <= 16',
+            (9, "Moderado"),  # '8 < EV/EBITDA <= 12',
+            (5, "Bom"),  # '4 < EV/EBITDA <= 8',
+            (1, "Ótimo"),  # '0 <= EV/EBITDA <= 4',
+            ("invalido", "Erro")  # Entrada inválida
+        ]
+        for EVEBITDAE, condicao in testes_EVEBITDAEvaluator:
+            resultado = EVEBITDAE_evaluator.avaliar(EVEBITDAE)
+            adicionar_resultado(resultado, "EVEBITDAEvaluator",
+                                f"avaliar (lucro={EVEBITDAE})")
+
+            # 23 . Testes para EVEBITEvaluator
+
+        EVEBITE_evaluator = EVEBITEvaluator()
+
+        testes_EVEBITEvaluator = [
+            (-1, "Muito Crítico"),# 'EV/EBIT < 0',
+            (16, "Ruim"),  # '15 < EV/EBIT <= 20',
+            (9, "Moderado"),  # '8 < EV/EBITDA <= 12',
+            (11, "Bom"),  # '10 < EV/EBIT <= 15',
+            (1, "Ótimo"),  # '0 <= EV/EBIT <= 6',
+             (21, "Crítico"),#'EV/EBIT > 20',
+            ("invalido", "Erro")  # Entrada inválida
+        ]
+        for EVEBITE, condicao in testes_EVEBITEvaluator:
+            resultado = EVEBITE_evaluator.avaliar(EVEBITE)
+            adicionar_resultado(resultado, "EVEBITEvaluator",
+                                f"avaliar (lucro={EVEBITE})")
+
+            # 24 . Testes para PEBITDAEvaluator
+
+            PEBITDA_evaluator = PEBITDAEvaluator()
+
+            testes_PEBITDAEvaluator = [
+                (-1, "Muito Crítico"),  # 'P/EBITDA < 0',
+                (16, "Ruim"),  # 14 < P/EBITDA <= 18',
+                (12, "Moderado"),  # '10 < P/EBITDA <= 14',
+                (7, "Bom"),  # 6 < P/EBITDA <= 10',
+                (5, "Ótimo"),  # '0 <= P/EBITDA <= 6',
+                (21, "Crítico"),  # ''P/EBITDA > 18',
+                ("invalido", "Erro")  # Entrada inválida
+            ]
+            for PEBITDA, condicao in testes_PEBITDAEvaluator:
+                resultado = PEBITDA_evaluator.avaliar(PEBITDA)
+                adicionar_resultado(resultado, "PEBITDAEvaluator",
+                                    f"avaliar (lucro={PEBITDA})")
+                # 24 . Testes para PEBITDAEvaluator
+
+            PEBITE_evaluator = PEBITEvaluator()
+
+            testes_PEBITEvaluator = [
+                    (-1, "Muito Crítico"),  # 'P/EBIT < 0',
+                    (16, "Ruim"),  # 16 < P/EBIT <= 20',
+                    (12, "Moderado"),  # 12 < P/EBIT <= 16',
+                    (9, "Bom"),  # '8 < P/EBIT <= 12',
+                    (5, "Ótimo"),  # '0 <= P/EBITDA <= 6',
+                    (21, "Crítico"),  # 'P/EBIT > 20',
+                    ("invalido", "Erro")  # Entrada inválida
+                ]
+            for PEBITE, condicao in testes_PEBITEvaluator:
+                    resultado = PEBITE_evaluator.avaliar(PEBITE)
+                    adicionar_resultado(resultado, "PEBITDAEvaluator",
+                                        f"avaliar (lucro={PEBITE})")
+
+     # 25 . Testes para PEBITDAEvaluator
+
+            PAtivo_evaluator = PAtivoEvaluator()
+
+            testes_PAtivovaluator = [
+                    (-1, "Muito Crítico"),  # P/Ativo <= 0',
+                    (1.6, "Ruim"),  # 1.5 < P/Ativo <= 2',
+                    (1.2, "Moderado"),  # 1 < P/Ativo <= 1.5',
+                    (0.6, "Bom"),  # '0.5 < P/Ativo <= 1',
+                    (0.1, "Ótimo"),  # '0 < P/Ativo <= 0.5',
+                    (3, "Crítico"),  # 'P/Ativo > 2',
+                    ("invalido", "Erro")  # Entrada inválida
+                ]
+            for PAtivo, condicao in testes_PAtivovaluator:
+                    resultado = PAtivo_evaluator.avaliar(PAtivo)
+                    adicionar_resultado(resultado, "PAtivoEvaluator",
+                                        f"avaliar (lucro={PAtivo})")
+                    # 25 . Testes para PEBITDAEvaluator
+
+            LPA_evaluator = LPAEvaluator()
+
+            testes_LPAEvaluator = [
+
+                (0.1, "Ruim"),  # '0 <= LPA <= 1',
+                (1.2, "Moderado"),  # '1 < LPA <= 3',
+                (3, "Bom"),  # 3 < LPA <= 5',
+                (6, "Ótimo"),  # ''LPA > 5',
+                (-1, "Crítico"),  # 'LPA < 0',,
+                ("invalido", "Erro")  # Entrada inválida
+            ]
+            for LPA, condicao in testes_LPAEvaluator:
+                resultado = LPA_evaluator.avaliar(LPA)
+                adicionar_resultado(resultado, "LPAEvaluator",
+                                    f"avaliar (lucro={LPA})")
 
     return resultados
 
-#
+#LPAEvaluator
 
 
 
