@@ -3045,7 +3045,7 @@ class DividaBrutaEvaluator:
                     recomendacao='Considere investir, mas avalie a eficiência na alocação de capital. Boa opção para investidores que buscam segurança financeira.'
                 )
             # Verifica se a proporção está entre 0 e 0.3, indicando baixa alavancagem
-            elif 0 < proporcao_divida_ativos <= 0.3:
+            elif 0 < divida_bruta <= 0.3:
                 # Retorna ResultadoIND para baixa alavancagem
                 return self.gerar_resultado(
                     classificacao='Bom',
@@ -3056,7 +3056,7 @@ class DividaBrutaEvaluator:
                     recomendacao='Considere investir, mas verifique a estratégia de crescimento e uso de capital. Boa opção para investidores que priorizam estabilidade.'
                 )
             # Verifica se a proporção está entre 0.3 e 0.6, indicando alavancagem moderada
-            elif 0.3 < proporcao_divida_ativos <= 0.6:
+            elif 0.3 < divida_bruta <= 0.6:
                 # Retorna ResultadoIND para alavancagem moderada
                 return self.gerar_resultado(
                     classificacao='Moderado',
@@ -3067,7 +3067,7 @@ class DividaBrutaEvaluator:
                     recomendacao='Considere investir com cautela, avaliando a capacidade de pagamento de dívidas e estabilidade dos lucros. Priorize empresas com fluxo de caixa robusto.'
                 )
             # Verifica se a proporção está entre 0.6 e 1.0, indicando alta alavancagem
-            elif 0.6 < proporcao_divida_ativos <= 1.0:
+            elif 0.6 < divida_bruta <= 1.0:
                 # Retorna ResultadoIND para alta alavancagem
                 return self.gerar_resultado(
                     classificacao='Ruim',
@@ -3078,7 +3078,7 @@ class DividaBrutaEvaluator:
                     recomendacao='Evite investir a menos que haja forte geração de caixa ou planos de desalavancagem. Monitore a capacidade de pagamento de dívidas.'
                 )
             # Verifica se a proporção excede 1.0, indicando alavancagem crítica
-            elif proporcao_divida_ativos > 1.0:
+            elif divida_bruta > 1.0:
                 # Retorna ResultadoIND para alavancagem crítica
                 return self.gerar_resultado(
                     classificacao='Crítico',
@@ -4729,7 +4729,6 @@ class VPAEvaluator:
             #p_vpa = preco_acao / vpa
             # Verifica se P/VPA é negativo, indicando patrimônio líquido negativo
             if p_vpa < 0:
-                # Retorna ResultadoIND para P/VPA negativo
                 return self.gerar_resultado(
                     classificacao='Muito Crítico',
                     faixa='P/VPA < 0',
@@ -4738,9 +4737,9 @@ class VPAEvaluator:
                     referencia='Avalie evaluate_roe para rentabilidade patrimonial, evaluate_div_liquida_pl para alavancagem e evaluate_cash_flow para geração de caixa.',
                     recomendacao='Evite investir até que a empresa demonstre recuperação patrimonial. Priorize análise de turnaround e saúde financeira.'
                 )
+
             # Verifica se P/VPA está entre 0 e 0.8, indicando forte subvalorização
             elif 0 <= p_vpa <= 0.8:
-                # Retorna ResultadoIND para forte subvalorização
                 return self.gerar_resultado(
                     classificacao='Ótimo',
                     faixa='0 <= P/VPA <= 0.8',
@@ -4749,9 +4748,9 @@ class VPAEvaluator:
                     referencia='Analise evaluate_p_l para comparação de lucros, evaluate_roe para rentabilidade e evaluate_debt_to_assets para alavancagem.',
                     recomendacao='Considere investir, mas verifique a qualidade dos ativos e a rentabilidade patrimonial. Avalie se a subvalorização é temporária ou estrutural.'
                 )
+
             # Verifica se P/VPA está entre 0.8 e 1.2, indicando valuation equilibrado
             elif 0.8 < p_vpa <= 1.2:
-                # Retorna ResultadoIND para valuation equilibrado
                 return self.gerar_resultado(
                     classificacao='Bom',
                     faixa='0.8 < P/VPA <= 1.2',
@@ -4760,9 +4759,9 @@ class VPAEvaluator:
                     referencia='Compare com evaluate_p_l para valuation de lucros, evaluate_margem_liquida para eficiência e evaluate_peg_ratio para crescimento.',
                     recomendacao='Avalie o histórico de rentabilidade e estratégias de crescimento antes de investir. Pode ser uma boa opção para investidores que buscam estabilidade.'
                 )
+
             # Verifica se P/VPA está entre 1.2 e 1.8, indicando valuation moderado
             elif 1.2 < p_vpa <= 1.8:
-                # Retorna ResultadoIND para valuation moderado
                 return self.gerar_resultado(
                     classificacao='Moderado',
                     faixa='1.2 < P/VPA <= 1.8',
@@ -4771,9 +4770,9 @@ class VPAEvaluator:
                     referencia='Verifique evaluate_p_ebitda para valuation operacional, evaluate_roe para retorno patrimonial e evaluate_beta para volatilidade.',
                     recomendacao='Considere esperar por sinais de crescimento ou redução no valuation antes de investir. Combine com análise de fluxo de caixa e qualidade dos ativos.'
                 )
+
             # Verifica se P/VPA está entre 1.8 e 2.5, indicando sobrevalorização
             elif 1.8 < p_vpa <= 2.5:
-                # Retorna ResultadoIND para sobrevalorização
                 return self.gerar_resultado(
                     classificacao='Ruim',
                     faixa='1.8 < P/VPA <= 2.5',
@@ -4782,9 +4781,9 @@ class VPAEvaluator:
                     referencia='Combine com evaluate_psr para receita, evaluate_margem_liquida para eficiência e evaluate_cash_conversion_cycle para ciclo de caixa.',
                     recomendacao='Monitore catalisadores de crescimento e relatórios trimestrais. Invista com cautela, priorizando empresas com ativos produtivos e rentabilidade sólida.'
                 )
+
             # Verifica se P/VPA excede 2.5, indicando sobrevalorização extrema
             elif p_vpa > 2.5:
-                # Retorna ResultadoIND para sobrevalorização extrema
                 return self.gerar_resultado(
                     classificacao='Crítico',
                     faixa='P/VPA > 2.5',
@@ -4792,8 +4791,7 @@ class VPAEvaluator:
                     riscos='Alto risco de correção acentuada no preço, com potencial para perdas significativas. Pode haver dependência de ativos intangíveis ou expectativas irreais de crescimento.',
                     referencia='Analise evaluate_dividend_yield para rendimentos, evaluate_beta para volatilidade e evaluate_growth_rate para taxas de crescimento.',
                     recomendacao='Não invista devido ao risco elevado de perdas. Considere vender posições existentes e buscar alternativas com valuation mais razoável.'
-                )
-        # Captura exceções para entradas inválidas (ex.: não numéricas)
+                )# Captura exceções para entradas inválidas (ex.: não numéricas)
         except Exception as e:
             # Retorna ResultadoIND com mensagem de erro
             return self._erro(mensagem=str(e))
