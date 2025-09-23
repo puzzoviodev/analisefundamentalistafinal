@@ -24,6 +24,14 @@ from analiseativos import *
 
 #from teste01 import metrica
 
+font_otimo         = Font(color="00B050")  # Verde escuro → Ótimo
+font_muito_bom     = Font(color="00C000")  # Verde claro → Muito Bom
+font_bom           = Font(color="92D050")  # Verde amarelado → Bom
+font_moderado      = Font(color="999900")  # Amarelo → Moderado
+font_ruim          = Font(color="FFC000")  # Laranja → Ruim
+font_critico       = Font(color="FF0000")  # Vermelho → Crítico
+font_muito_critico = Font(color="C00000")  # Vermelho escuro → Muito Crítico
+
 fillvermelho= PatternFill(start_color="FF0000", end_color="FF0000", fill_type="solid") # Vermelho
 
 fillverde= PatternFill(start_color="00FF00", end_color="00FF00", fill_type="solid") # Verde
@@ -452,25 +460,25 @@ def gravaIndiEficiênciaoStaus(wsIndiRentabilidade, dict_stocks, stock):
 
 
             if classificacao == 'Crítico':
-                wsIndiRentabilidade.cell(row=linha2, column=9, value=classificacao).fill = fillroxo
+                wsIndiRentabilidade.cell(row=linha2, column=9, value=classificacao).font  = font_critico
                 wsIndiRentabilidade.cell(row=linha2, column=10, value=faixa)
             if classificacao == 'Ruim':
-                wsIndiRentabilidade.cell(row=linha2, column=9, value=classificacao).fill = fillvermelho
+                wsIndiRentabilidade.cell(row=linha2, column=9, value=classificacao).font  = font_ruim
                 wsIndiRentabilidade.cell(row=linha2, column=10, value=faixa)
             if classificacao == 'Moderado':
-                wsIndiRentabilidade.cell(row=linha2, column=9, value=classificacao).fill = fillamarelo
+                wsIndiRentabilidade.cell(row=linha2, column=9, value=classificacao).font  = font_moderado
                 wsIndiRentabilidade.cell(row=linha2, column=10, value=faixa)
             if  classificacao == 'Bom':
-                wsIndiRentabilidade.cell(row=linha2, column=9, value=classificacao).fill =fillpastelazul
+                wsIndiRentabilidade.cell(row=linha2, column=9, value=classificacao).font  =font_bom
                 wsIndiRentabilidade.cell(row=linha2, column=10, value=faixa)
             if  classificacao == 'Ótimo':
-                wsIndiRentabilidade.cell(row=linha2, column=9, value=classificacao).fill = fillverde
+                wsIndiRentabilidade.cell(row=linha2, column=9, value=classificacao).font  = font_otimo
                 wsIndiRentabilidade.cell(row=linha2, column=10, value=faixa)
             if  classificacao == 'Muito Bom':
-                wsIndiRentabilidade.cell(row=linha2, column=9, value=classificacao).fill = fillverde
+                wsIndiRentabilidade.cell(row=linha2, column=9, value=classificacao).font  = font_muito_bom
                 wsIndiRentabilidade.cell(row=linha2, column=10, value=faixa)
             if classificacao == 'Muito Crítico':
-               wsIndiRentabilidade.cell(row=linha2, column=9, value=classificacao).fill = fillverde
+               wsIndiRentabilidade.cell(row=linha2, column=9, value=classificacao).font  = font_muito_critico
                wsIndiRentabilidade.cell(row=linha2, column=10, value=faixa)
 
 

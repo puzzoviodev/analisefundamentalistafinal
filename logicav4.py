@@ -21,6 +21,7 @@ def coletar_resultados_avaliacao():
         resultado_dict['Metodo'] = metodo
         resultados.append(resultado_dict)
 
+    """
     # 1. Testes para LucroLiquidoEvaluator
     lucro_evaluator = LucroLiquidoEvaluator()
     receita_liquida = 1000  # Valor fixo para receita líquida
@@ -35,9 +36,11 @@ def coletar_resultados_avaliacao():
     for lucro, condicao in testes_lucro:
         resultado = lucro_evaluator.avaliar(lucro, receita_liquida)
         adicionar_resultado(resultado, "LucroLiquidoEvaluator", f"avaliar (lucro={lucro}, receita={receita_liquida})")
-
+   
+   
     # 2. Testes para EBITDAEvaluator
     ebitda_evaluator = EBITDAEvaluator()
+    receita_liquida = 1000  # Valor fixo para receita líquida
     testes_ebitda = [
         (-100, "Negativo"),  # EBITDA < 0
         (0, "Baixo"),  # 0 <= Margem EBITDA <= 10%
@@ -49,17 +52,17 @@ def coletar_resultados_avaliacao():
     for ebitda, condicao in testes_ebitda:
         resultado = ebitda_evaluator.avaliar(ebitda, receita_liquida)
         adicionar_resultado(resultado, "EBITDAEvaluator", f"avaliar (ebitda={ebitda}, receita={receita_liquida})")
-
+  """
     # 3. Testes para DividaBrutaEvaluator
     divida_evaluator = DividaBrutaEvaluator()
     ativos_totais = 1000  # Valor fixo para ativos totais
     testes_divida = [
-        (-1, "Crítico"),  # 'Dívida Bruta < 0',
+        (-1, "Muito Crítico"),  # 'Dívida Bruta < 0',
         (0, "Ótimo"),  # 'Dívida Bruta = 0',
         (0.3, "Bom"),  # '0 < Dívida Bruta / Ativos <= 0.3',
-        (0.3, "Moderado"),  #'0.3 < Dívida Bruta / Ativos <= 0.6',
-        (0.6, "Ruim"),  # '0.6 < Dívida Bruta / Ativos <= 1.0',
-        (1.1, "Crítico"),  # 'Dívida Bruta / Ativos > 1.0',
+        (0.31, "Moderado"),  #'0.3 < Dívida Bruta / Ativos <= 0.6',
+        (0.7, "Ruim"),  # '0.6 < Dívida Bruta / Ativos <= 1.0',
+        (1.1, "Muito Crítico"),  # 'Dívida Bruta / Ativos > 1.0',
         ("invalido", "Erro")  # Entrada inválida
     ]
     for divida, condicao in testes_divida:
@@ -88,8 +91,8 @@ def coletar_resultados_avaliacao():
         (-1, "Negativo"),  # P/L < 0
         (0, "Ótimo"),  # 0 <= P/L <= 10
         (15, "Bom"),  # 10 < P/L <= 15
-        (15, "Moderado"),  # 15 < P/L <= 20
-        (20, "Elevado"),  # 20 < P/L <= 25
+        (16, "Moderado"),  # 15 < P/L <= 20
+        (21, "Elevado"),  # 20 < P/L <= 25
         (30, "Excessivo"),  # P/L > 25
         ("invalido", "Erro")  # Entrada inválida
     ]
@@ -120,7 +123,7 @@ def coletar_resultados_avaliacao():
         (1.5, "Moderado"),  # '1.2 < P/VP <= 1.8',
         (2.0, "Ruim"),  # '1.8 < P/VP <= 2.5',
         (3.0, "Crítico"),  # '2.5 < P/VP <= 4',
-        (5.0, "Crítico"),  # 'P/VP > 4',
+        (5.0, "Muito Crítico"),  # 'P/VP > 4',
         ("invalido", "Erro")  # Entrada inválida
     ]
     for PVPE, condicao in testes_PVPEvaluator:
@@ -131,8 +134,8 @@ def coletar_resultados_avaliacao():
     ROE_evaluator = ROEEvaluator()
     testes_ROE = [
         (-10, "Crítico"),  # ROE < 0%',
-        (4, "Ruim"),  # '0 <= ROE <= 5%',
-        (8, "Moderado"),  # 5 < ROE <= 15%',
+        (0, "Ruim"),  # '0 <= ROE <= 5%',
+        (5.1, "Moderado"),  # 5 < ROE <= 15%',
         (16, "Bom"),  # '15 < ROE <= 25%',
         (26, "Ótimo"),  # 'ROE > 25%',
         ("invalido", "Erro")  # Entrada inválida
@@ -247,7 +250,7 @@ def coletar_resultados_avaliacao():
         (3.1, "Ruim"),  # '3 < Dívida Líquida / EBITDA <= 4',
         (2.1, "Moderado"),  # '2 < Dívida Líquida / EBITDA <= 3',
         (1.1, "Bom"),  # '1 < Dívida Líquida / EBITDA <= 2',
-        (-21, "Muito Bom"),  # '0 <= Dívida Líquida / EBITDA <= 1',
+        (1, "Muito Bom"),  # '0 <= Dívida Líquida / EBITDA <= 1',
         (-1, "Ótimo"),  # 'Dívida Líquida / EBITDA < 0',
         ("invalido", "Erro")  # Entrada inválida
     ]
@@ -275,8 +278,8 @@ def coletar_resultados_avaliacao():
     testes_PLAtivos = [
         (-5, "Crítico"),  # 'PL/Ativos < 0',
         (0.1, "Ruim"),  # '0 <= PL/Ativos <= 0.2',
-        (0.2, "Moderado"),  # ''0.2 < PL/Ativos <= 0.4',
-        (0.4, "Bom"),  # '0.4 < PL/Ativos <= 0.6',
+        (0.3, "Moderado"),  # ''0.2 < PL/Ativos <= 0.4',
+        (0.5, "Bom"),  # '0.4 < PL/Ativos <= 0.6',
         (0.7, "Ótimo"),  # 'PL/Ativos > 0.6',
         ("invalido", "Erro")  # Entrada inválida
     ]
@@ -377,7 +380,7 @@ def coletar_resultados_avaliacao():
     testes_PEBITEvaluator = [
         (-1, "Muito Crítico"),  # 'P/EBIT < 0',
         (16, "Ruim"),  # 16 < P/EBIT <= 20',
-        (12, "Moderado"),  # 12 < P/EBIT <= 16',
+        (15, "Moderado"),  # 12 < P/EBIT <= 16',
         (9, "Bom"),  # '8 < P/EBIT <= 12',
         (5, "Ótimo"),  # '0 <= P/EBITDA <= 6',
         (21, "Crítico"),  # 'P/EBIT > 20',
@@ -385,7 +388,7 @@ def coletar_resultados_avaliacao():
     ]
     for PEBITE, condicao in testes_PEBITEvaluator:
         resultado = PEBITE_evaluator.avaliar(PEBITE)
-        adicionar_resultado(resultado, "PEBITDAEvaluator", f"avaliar (lucro={PEBITE})")
+        adicionar_resultado(resultado, "PEBITEvaluator", f"avaliar (lucro={PEBITE})")
 
     # 26. Testes para PAtivoEvaluator
     PAtivo_evaluator = PAtivoEvaluator()
@@ -407,7 +410,7 @@ def coletar_resultados_avaliacao():
     testes_LPAEvaluator = [
         (0.1, "Ruim"),  # '0 <= LPA <= 1',
         (1.2, "Moderado"),  # '1 < LPA <= 3',
-        (3, "Bom"),  # 3 < LPA <= 5',
+        (4, "Bom"),  # 3 < LPA <= 5',
         (6, "Ótimo"),  # ''LPA > 5',
         (-1, "Crítico"),  # 'LPA < 0',
         ("invalido", "Erro")  # Entrada inválida

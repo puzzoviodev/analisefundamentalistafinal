@@ -133,8 +133,8 @@ def coletar_resultados_avaliacao():
 
     testes_ROE = [
             (-10, "Crítico"),  # ROE < 0%',
-            (4, "Ruim"),  # '0 <= ROE <= 5%',
-            (8, "Moderado"),  # 5 < ROE <= 15%',
+            (5, "Ruim"),  # '0 <= ROE <= 5%',
+            (5, "Moderado"),  # 5 < ROE <= 15%',
             (16, "Bom"),  # '15 < ROE <= 25%',
             (26, "Ótimo"),  # 'ROE > 25%',
             ("invalido", "Erro")  # Entrada inválida
@@ -228,7 +228,7 @@ def coletar_resultados_avaliacao():
             (31, "Ótimo"),  # 'Margem Líquida > 25%',
             ("invalido", "Erro")  # Entrada inválida
         ]
-        for MargemLiquida, condicao in testes_MargemLiquida:
+    for MargemLiquida, condicao in testes_MargemLiquida:
             resultado = MargemLiquida_evaluator.avaliar(MargemLiquida)
             adicionar_resultado(resultado, "MargemLiquidaEvaluator", f"avaliar (lucro={MargemLiquida})")
 

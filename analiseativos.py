@@ -2011,7 +2011,7 @@ class EBITDAEvaluator:
                 raise ValueError("A Receita Líquida não pode ser zero para calcular a margem EBITDA.")
             margem_ebitda = ebitda / receita_liquida
             # Verifica se EBITDA é negativo, indicando prejuízo operacional
-            if margem_ebitda < 0:
+            if ebitda < 0:
                 # Retorna ResultadoIND para EBITDA negativo
                 return self.gerar_resultado(
                     classificacao='Crítico',
@@ -2022,7 +2022,7 @@ class EBITDAEvaluator:
                     recomendacao='Evite investir até que a empresa demonstre recuperação operacional. Priorize análise de custos e estratégias de turnaround.'
                 )
             # Verifica se a margem EBITDA está entre 0 e 10%, indicando lucratividade operacional baixa
-            elif 0 <= margem_ebitda <= 0.10:
+            elif 0 <= ebitda <= 0.10:
                 # Retorna ResultadoIND para lucratividade baixa
                 return self.gerar_resultado(
                     classificacao='Ruim',
@@ -2033,7 +2033,7 @@ class EBITDAEvaluator:
                     recomendacao='Considere investir com cautela, avaliando estratégias de redução de custos e competitividade. Priorize empresas com planos de melhoria operacional.'
                 )
             # Verifica se a margem EBITDA está entre 10% e 20%, indicando lucratividade moderada
-            elif 0.10 < margem_ebitda <= 0.20:
+            elif 0.10 < ebitda <= 0.20:
                 # Retorna ResultadoIND para lucratividade moderada
                 return self.gerar_resultado(
                     classificacao='Moderado',
@@ -2044,7 +2044,7 @@ class EBITDAEvaluator:
                     recomendacao='Considere investir, mas avalie a sustentabilidade dos lucros e estratégias de crescimento. Boa opção para investidores que buscam estabilidade.'
                 )
             # Verifica se a margem EBITDA está entre 20% e 30%, indicando boa lucratividade
-            elif 0.20 < margem_ebitda <= 0.30:
+            elif 0.20 < ebitda <= 0.30:
                 # Retorna ResultadoIND para boa lucratividade
                 return self.gerar_resultado(
                     classificacao='Bom',
@@ -2055,7 +2055,7 @@ class EBITDAEvaluator:
                     recomendacao='Considere investir, mas monitore a consistência dos lucros e exposição a riscos de mercado. Boa opção para investidores que buscam eficiência.'
                 )
             # Verifica se a margem EBITDA excede 30%, indicando lucratividade excepcional
-            elif margem_ebitda > 0.30:
+            elif ebitda > 0.30:
                 # Retorna ResultadoIND para lucratividade excepcional
                 return self.gerar_resultado(
                     classificacao='Ótimo',
@@ -7408,7 +7408,7 @@ class PVPEvaluator:
             elif p_vp > 4:
                 # Retorna ResultadoIND para ação extremamente sobrevalorizada
                 return self.gerar_resultado(
-                    classificacao='Crítico',
+                    classificacao='Muito Crítico',
                     faixa='P/VP > 4',
                     descricao='O preço da ação é extremamente elevado em relação ao patrimônio, indicando forte especulação ou expectativas irreais de crescimento. Essa faixa é comum em bolhas de mercado ou empresas com narrativas especulativas.',
                     riscos='Alto risco de bolhas especulativas, com potencial para quedas significativas no preço. A empresa pode estar sobrevalorizada devido a hype ou baixa liquidez patrimonial.',
