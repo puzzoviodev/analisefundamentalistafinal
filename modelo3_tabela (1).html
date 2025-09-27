@@ -1,0 +1,449 @@
+
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Indicadores ABEV3 - Modelo 3</title>
+    <style>
+        body { font-family: Tahoma; background-color: #ffffff; padding: 20px; }
+        table { border-collapse: collapse; width: 100%; }
+        th, td { border: 1px solid #ccc; padding: 10px; text-align: left; }
+        th { background-color: #333; color: white; }
+    </style>
+</head>
+<body>
+<h2>Indicadores Financeiros - ABEV3 (Modelo 3)</h2>
+<table>
+<tr>
+    <th>Indicador</th>
+    <th>Agrupador</th>
+    <th>Valor</th>
+    <th>Classificação</th>
+    <th>Faixa</th>
+    <th>Definição</th>
+    <th>Descrição</th>
+</tr>
+
+    <tr style="background-color:#d4edda;">
+        <td>ROIC</td>
+        <td>Rentabilidade</td>
+        <td>0.1873</td>
+        <td>Ótimo</td>
+        <td>ROIC > 15%</td>
+        <td>O ROIC (Retorno sobre Capital Investido) mede a eficiência da empresa em gerar lucros a partir do capital total investido, calculado
+        como (NOPAT / Capital Investido) * 100, onde NOPAT é o lucro operacional após impostos e Capital Investido é a soma de patrimônio
+        líquido e dívida líquida. É um indicador de rentabilidade que avalia a capacidade de alocação eficiente do capital. Um ROIC alto sugere
+        eficiência superior, enquanto valores baixos indicam ineficiência ou retornos insuficientes.</td>
+        <td>O ROIC é extremamente alto, indicando rentabilidade excepcional sobre o capital investido. Essa faixa é típica de empresas com modelos de negócios escaláveis, baixa intensidade de capital ou eficiência superior, como software ou serviços especializados, refletindo forte retorno sobre o capital.</td>
+    </tr>
+    
+    <tr style="background-color:#f8d7da;">
+        <td>P/Cap. Giro</td>
+        <td>Valuation</td>
+        <td>49.86</td>
+        <td>Ruim</td>
+        <td>P/Capital de Giro > 20</td>
+        <td>O P/Capital de Giro mede o valor de mercado da empresa em relação ao seu capital de giro, calculado
+        como (Valor de Mercado / Capital de Giro), onde Capital de Giro é o Ativo Circulante menos o Passivo Circulante.
+        É um indicador de valuation que avalia a relação entre o preço da empresa e sua liquidez operacional de curto prazo.
+        Um valor baixo sugere subvalorização ou alta liquidez, enquanto valores altos indicam sobrevalorização ou baixa liquidez.</td>
+        <td>O P/Capital de Giro é extremamente elevado, sugerindo forte sobrevalorização ou expectativas irreais de liquidez operacional. Essa faixa é típica de bolhas de mercado, empresas de alto crescimento especulativo ou narrativas hype, onde o preço de mercado desconecta dos fundamentos financeiros.</td>
+    </tr>
+    
+    <tr style="background-color:#d4edda;">
+        <td>D.Y</td>
+        <td>Rentabilidade</td>
+        <td>8.48</td>
+        <td>Ótimo</td>
+        <td>Dividend Yield > 6%</td>
+        <td>O Dividend Yield (DY) mede o retorno anual dos dividendos pagos por ação em relação ao preço da ação, calculado
+        como (Dividendos por Ação / Preço da Ação) * 100. É um indicador de rentabilidade para investidores que buscam
+        renda passiva. Um DY alto sugere bom retorno de dividendos, enquanto valores baixos podem indicar baixa distribuição
+        de lucros ou expectativas de crescimento.</td>
+        <td>O Dividend Yield é extremamente alto, indicando retorno excepcional via dividendos. Essa faixa é típica de empresas com forte geração de caixa e política agressiva de distribuição, como utilities ou REITs, mas pode também sinalizar empresas em declínio com preços deprimidos.</td>
+    </tr>
+    
+    <tr style="background-color:#d4edda;">
+        <td>P/L</td>
+        <td>Saúde Financeira</td>
+        <td>13.25</td>
+        <td>Ótimo</td>
+        <td>Patrimônio Líquido / Ativos > 0.6</td>
+        <td>O Patrimônio Líquido representa o valor contábil dos recursos próprios da empresa, calculado como (Ativos Totais - Passivos Totais).
+        É um indicador de saúde financeira que mostra o valor residual pertencente aos acionistas após o pagamento de todas as dívidas.
+        Um valor alto sugere solidez financeira, enquanto valores baixos ou negativos indicam fragilidade ou endividamento excessivo.</td>
+        <td>O Patrimônio Líquido é extremamente alto em relação aos ativos, indicando baixa alavancagem e robustez financeira. Típico de empresas com forte geração de caixa ou baixa necessidade de capital, como software ou serviços especializados, refletindo solidez financeira.</td>
+    </tr>
+    
+    <tr style="background-color:#d4edda;">
+        <td>Disponibilidade</td>
+        <td>Saúde Financeira</td>
+        <td>13.25</td>
+        <td>Ótimo</td>
+        <td>Patrimônio Líquido / Ativos > 0.6</td>
+        <td>O Patrimônio Líquido representa o valor contábil dos recursos próprios da empresa, calculado como (Ativos Totais - Passivos Totais).
+        É um indicador de saúde financeira que mostra o valor residual pertencente aos acionistas após o pagamento de todas as dívidas.
+        Um valor alto sugere solidez financeira, enquanto valores baixos ou negativos indicam fragilidade ou endividamento excessivo.</td>
+        <td>O Patrimônio Líquido é extremamente alto em relação aos ativos, indicando baixa alavancagem e robustez financeira. Típico de empresas com forte geração de caixa ou baixa necessidade de capital, como software ou serviços especializados, refletindo solidez financeira.</td>
+    </tr>
+    
+    <tr style="background-color:#fff3cd;">
+        <td>Giro ativos</td>
+        <td>Eficiência Operacional</td>
+        <td>0.65</td>
+        <td>Moderado</td>
+        <td>0.5 < Giro do Ativo <= 1.0</td>
+        <td>O Giro do Ativo mede a eficiência com que a empresa utiliza seus ativos totais para gerar receita, calculado
+        como (Receita Líquida / Ativos Totais). É um indicador de eficiência operacional que avalia o quão bem os ativos
+        são empregados para produzir vendas. Um valor alto sugere alta eficiência, enquanto valores baixos indicam subutilização
+        de ativos ou ineficiência operacional.</td>
+        <td>O Giro do Ativo está em uma faixa moderada, indicando eficiência razoável na utilização dos ativos para gerar receita. Essa faixa é comum em empresas com operações estáveis, como manufatura ou varejo, mas com potencial limitado para maximizar o uso de ativos.</td>
+    </tr>
+    
+    <tr style="background-color:#d4edda;">
+        <td>M. EBITDA</td>
+        <td>Eficiência Operacional</td>
+        <td>0.3631</td>
+        <td>Ótimo</td>
+        <td>Margem EBITDA > 30%</td>
+        <td>A Margem EBITDA mede a rentabilidade operacional ajustada da empresa, calculada como
+        (EBITDA / Receita Líquida) * 100. É um indicador de eficiência que mostra a porcentagem da receita que resta após custos operacionais, antes de juros, impostos, depreciação e amortização. Uma margem EBITDA alta sugere forte geração de caixa operacional, enquanto valores baixos indicam ineficiência ou pressão de custos.</td>
+        <td>A Margem EBITDA é extremamente alta, indicando eficiência operacional excepcional e forte geração de caixa. Essa faixa é típica de empresas com marcas premium, baixa concorrência ou modelos de negócios escaláveis, como software, tecnologia ou bens de luxo, onde os lucros operacionais ajustados são robustos.</td>
+    </tr>
+    
+    <tr style="background-color:#cce5ff;">
+        <td>EV/EBITDA</td>
+        <td>Valuation</td>
+        <td>5.45</td>
+        <td>Bom</td>
+        <td>4 < EV/EBITDA <= 8</td>
+        <td>O EV/EBITDA (Enterprise Value / EBITDA) mede o valor da empresa em relação ao seu lucro antes de juros, impostos, depreciação e amortização (EBITDA). É calculado
+        como (Enterprise Value / EBITDA), onde Enterprise Value = Valor de Mercado + Dívida Líquida - Caixa. É um indicador de valuation que avalia se a empresa está cara ou barata,
+        ajustado para depreciação e amortização. Um EV/EBITDA baixo sugere subvalorização, enquanto valores altos indicam sobrevalorização ou expectativas de crescimento.</td>
+        <td>O EV/EBITDA está em uma faixa equilibrada, sugerindo que a empresa tem um valuation razoável em relação ao seu lucro operacional ajustado. Essa faixa é comum em empresas estáveis com crescimento moderado e EBITDA consistente, refletindo confiança do mercado sem excesso de otimismo ou pessimismo.</td>
+    </tr>
+    
+    <tr style="background-color:#cce5ff;">
+        <td>Ativo circulante</td>
+        <td>Valuation</td>
+        <td>5.45</td>
+        <td>Bom</td>
+        <td>4 < EV/EBITDA <= 8</td>
+        <td>O EV/EBITDA (Enterprise Value / EBITDA) mede o valor da empresa em relação ao seu lucro antes de juros, impostos, depreciação e amortização (EBITDA). É calculado
+        como (Enterprise Value / EBITDA), onde Enterprise Value = Valor de Mercado + Dívida Líquida - Caixa. É um indicador de valuation que avalia se a empresa está cara ou barata,
+        ajustado para depreciação e amortização. Um EV/EBITDA baixo sugere subvalorização, enquanto valores altos indicam sobrevalorização ou expectativas de crescimento.</td>
+        <td>O EV/EBITDA está em uma faixa equilibrada, sugerindo que a empresa tem um valuation razoável em relação ao seu lucro operacional ajustado. Essa faixa é comum em empresas estáveis com crescimento moderado e EBITDA consistente, refletindo confiança do mercado sem excesso de otimismo ou pessimismo.</td>
+    </tr>
+    
+    <tr style="background-color:#cce5ff;">
+        <td>ROE</td>
+        <td>Rentabilidade</td>
+        <td>0.1595</td>
+        <td>Bom</td>
+        <td>15 < ROE <= 25%</td>
+        <td>O ROE (Retorno sobre Patrimônio Líquido) mede a rentabilidade da empresa em relação ao capital próprio dos acionistas, calculado
+        como (Lucro Líquido / Patrimônio Líquido) * 100. É um indicador de eficiência que avalia a capacidade da empresa de gerar lucros
+        com o patrimônio investido pelos acionistas. Um ROE alto sugere alta eficiência, enquanto valores baixos ou negativos indicam ineficiência ou prejuízos.</td>
+        <td>O ROE está em uma faixa alta, sugerindo boa rentabilidade sobre o patrimônio líquido. Essa faixa é comum em empresas com forte eficiência operacional, poder de precificação ou operações otimizadas, como tecnologia ou bens de consumo de marca, indicando capacidade de gerar retornos robustos.</td>
+    </tr>
+    
+    <tr style="background-color:#d4edda;">
+        <td>LIQUIDEZ MEDIA DIARIA</td>
+        <td>Liquidez de Mercado</td>
+        <td>358014350.52</td>
+        <td>Ótimo</td>
+        <td>Liquidez Média Diária > 2.000.000</td>
+        <td>A Liquidez Média Diária mede o volume financeiro médio negociado de uma ação por dia, geralmente em reais, dólares ou outra moeda,
+        calculado como o valor total negociado em um período dividido pelo número de dias. É um indicador de liquidez de mercado que avalia a facilidade
+        de comprar ou vender uma ação sem impactar significativamente seu preço. Um valor alto sugere alta liquidez, enquanto valores baixos indicam dificuldade
+        em negociar a ação.</td>
+        <td>A Liquidez Média Diária é extremamente alta, indicando facilidade excepcional para negociar a ação, mesmo em grandes volumes. Essa faixa é típica de empresas de alta capitalização, blue chips ou setores de grande interesse, como financeiro ou tecnologia, refletindo forte presença no mercado.</td>
+    </tr>
+    
+    <tr style="background-color:#d4edda;">
+        <td>P/EBITDA</td>
+        <td>Valuation</td>
+        <td>5.88</td>
+        <td>Ótimo</td>
+        <td>0 <= P/EBITDA <= 6</td>
+        <td>O P/EBITDA (Preço / EBITDA) mede o valor de mercado da empresa em relação ao seu lucro antes de juros, impostos, depreciação e amortização (EBITDA), calculado
+        como (Valor de Mercado / EBITDA). É um indicador de valuation que avalia se a empresa está cara ou barata com base em sua geração de caixa operacional ajustada.
+        Um P/EBITDA baixo sugere subvalorização, enquanto valores altos indicam sobrevalorização ou expectativas de crescimento futuro.</td>
+        <td>O P/EBITDA está muito baixo, sugerindo que a empresa está fortemente subvalorizada em relação à sua geração de caixa operacional ajustada. Essa faixa indica oportunidades de compra, comum em empresas com EBITDA sólido, mas preço de mercado deprimido devido a ciclos econômicos, baixa visibilidade ou setores menos atrativos.</td>
+    </tr>
+    
+    <tr style="background-color:#fff3cd;">
+        <td>P/Ativo</td>
+        <td>Valuation</td>
+        <td>1.37</td>
+        <td>Moderado</td>
+        <td>1 < P/Ativo <= 1.5</td>
+        <td>O P/Ativo (Preço / Ativo) mede o valor de mercado da empresa em relação aos seus ativos totais, calculado
+        como (Valor de Mercado / Ativos Totais). É um indicador de valuation que avalia se a empresa está cara ou barata
+        com base em seus ativos. Um P/Ativo baixo sugere subvalorização, enquanto valores altos indicam sobrevalorização ou
+        expectativas de alta rentabilidade sobre os ativos.</td>
+        <td>O P/Ativo está moderadamente elevado, sugerindo que o mercado atribui um prêmio aos ativos da empresa. Essa faixa indica expectativas de rentabilidade acima da média ou crescimento futuro, comum em empresas com ativos intangíveis valiosos ou em setores com potencial moderado.</td>
+    </tr>
+    
+    <tr style="background-color:#fff3cd;">
+        <td>Liq. corrente</td>
+        <td>Liquidez</td>
+        <td>1.11</td>
+        <td>Moderado</td>
+        <td>0.8 <= Liquidez Corrente < 1.2</td>
+        <td>A Liquidez Corrente mede a capacidade da empresa de pagar suas obrigações de curto prazo com seus ativos circulantes,
+        calculada como (Ativo Circulante / Passivo Circulante). É um indicador de liquidez que avalia a saúde financeira de curto
+        prazo da empresa. Um valor alto sugere boa capacidade de pagamento, enquanto valores baixos indicam risco de insolvência
+        no curto prazo.</td>
+        <td>A Liquidez Corrente está em uma faixa limitada, sugerindo que os ativos circulantes cobrem as obrigações de curto prazo de forma marginal. Essa faixa é comum em empresas com operações estáveis, mas com pouca folga financeira, como varejo ou manufatura com margens apertadas.</td>
+    </tr>
+    
+    <tr style="background-color:#fff3cd;">
+        <td>Free Float</td>
+        <td>Liquidez</td>
+        <td>nan</td>
+        <td>Moderado</td>
+        <td>0.8 <= Liquidez Corrente < 1.2</td>
+        <td>A Liquidez Corrente mede a capacidade da empresa de pagar suas obrigações de curto prazo com seus ativos circulantes,
+        calculada como (Ativo Circulante / Passivo Circulante). É um indicador de liquidez que avalia a saúde financeira de curto
+        prazo da empresa. Um valor alto sugere boa capacidade de pagamento, enquanto valores baixos indicam risco de insolvência
+        no curto prazo.</td>
+        <td>A Liquidez Corrente está em uma faixa limitada, sugerindo que os ativos circulantes cobrem as obrigações de curto prazo de forma marginal. Essa faixa é comum em empresas com operações estáveis, mas com pouca folga financeira, como varejo ou manufatura com margens apertadas.</td>
+    </tr>
+    
+    <tr style="background-color:#fff3cd;">
+        <td>Ativos</td>
+        <td>Liquidez</td>
+        <td>1.11</td>
+        <td>Moderado</td>
+        <td>0.8 <= Liquidez Corrente < 1.2</td>
+        <td>A Liquidez Corrente mede a capacidade da empresa de pagar suas obrigações de curto prazo com seus ativos circulantes,
+        calculada como (Ativo Circulante / Passivo Circulante). É um indicador de liquidez que avalia a saúde financeira de curto
+        prazo da empresa. Um valor alto sugere boa capacidade de pagamento, enquanto valores baixos indicam risco de insolvência
+        no curto prazo.</td>
+        <td>A Liquidez Corrente está em uma faixa limitada, sugerindo que os ativos circulantes cobrem as obrigações de curto prazo de forma marginal. Essa faixa é comum em empresas com operações estáveis, mas com pouca folga financeira, como varejo ou manufatura com margens apertadas.</td>
+    </tr>
+    
+    <tr style="background-color:#f8d7da;">
+        <td>P/VP</td>
+        <td>Valuation</td>
+        <td>2.11</td>
+        <td>Ruim</td>
+        <td>1.8 < P/VP <= 2.5</td>
+        <td>O Preço/Valor Patrimonial (P/VP) compara o preço da ação ao valor patrimonial por ação, calculado
+        como (Preço da Ação / Valor Patrimonial por Ação). É um indicador de valuation que avalia se a
+        ação está cara ou barata em relação aos ativos líquidos da empresa. Um P/VP baixo sugere
+        subvalorização, enquanto um valor alto indica sobrevalorização ou expectativas de crescimento.</td>
+        <td>O preço da ação está consideravelmente acima do valor patrimonial, indicando sobrevalorização moderada. Essa faixa é comum em empresas com expectativas de crescimento ou em setores de alto potencial, mas o preço já reflete otimismo significativo.</td>
+    </tr>
+    
+    <tr style="background-color:#cce5ff;">
+        <td>EV/EBIT</td>
+        <td>Valuation</td>
+        <td>7.88</td>
+        <td>Bom</td>
+        <td>6 < EV/EBIT <= 10</td>
+        <td>O EV/EBIT (Enterprise Value / EBIT) mede o valor da empresa em relação ao seu lucro antes de juros e impostos (EBIT). É calculado
+        como (Enterprise Value / EBIT), onde Enterprise Value = Valor de Mercado + Dívida Líquida - Caixa. É um indicador de valuation que avalia
+        se a empresa está cara ou barata, considerando sua dívida e caixa. Um EV/EBIT baixo sugere subvalorização, enquanto valores altos indicam sobrevalorização ou expectativas de crescimento.</td>
+        <td>O EV/EBIT está em uma faixa equilibrada, sugerindo que a empresa tem um valuation razoável em relação ao seu lucro operacional. Essa faixa é comum em empresas estáveis com crescimento moderado e EBIT consistente, refletindo confiança do mercado sem excesso de otimismo.</td>
+    </tr>
+    
+    <tr style="background-color:#fff3cd;">
+        <td>TAG ALONG</td>
+        <td>Governança Corporativa</td>
+        <td>0.8</td>
+        <td>Moderado</td>
+        <td>80% <= Tag Along <= 99%</td>
+        <td>O Tag Along é um mecanismo de proteção aos acionistas minoritários que garante o direito de vender suas ações nas mesmas condições
+        (preço e termos) oferecidas ao controlador em caso de venda do controle acionário. Expresso como percentual do preço pago por ação ao
+        controlador, é previsto no estatuto da empresa ou na legislação (ex.: Lei das S.A. no Brasil, que exige 80% para empresas listadas em
+        alguns segmentos). Um Tag Along alto reflete maior proteção aos minoritários, enquanto um Tag Along baixo ou inexistente indica maior risco.</td>
+        <td>O Tag Along oferece proteção padrão aos minoritários, alinhado com exigências de mercados como o Novo Mercado da B3. Comum em empresas com governança sólida, sugere segurança razoável em cenários de venda de controle.</td>
+    </tr>
+    
+    <tr style="background-color:#cce5ff;">
+        <td>M. Bruta</td>
+        <td>Eficiência Operacional</td>
+        <td>0.515</td>
+        <td>Bom</td>
+        <td>40 < Margem Bruta <= 60%</td>
+        <td>A Margem Bruta mede a rentabilidade bruta da empresa, calculada como
+        ((Receita Líquida - Custo dos Produtos Vendidos) / Receita Líquida) * 100.
+        É um indicador de eficiência operacional que mostra a porcentagem da receita que resta após os custos diretos de produção. Uma margem bruta alta sugere eficiência na gestão de custos, enquanto valores baixos indicam pressão sobre custos ou baixa precificação.</td>
+        <td>A Margem Bruta está em uma faixa alta, sugerindo boa eficiência operacional e controle de custos diretos. Essa faixa é comum em empresas com forte poder de precificação ou operações otimizadas, como tecnologia ou bens de consumo de marca.</td>
+    </tr>
+    
+    <tr style="background-color:#cce5ff;">
+        <td>M. Liquida</td>
+        <td>Rentabilidade</td>
+        <td>0.1608</td>
+        <td>Bom</td>
+        <td>15 < Margem Líquida <= 25%</td>
+        <td>A Margem Líquida mede a rentabilidade final da empresa, calculada como
+        (Lucro Líquido / Receita Líquida) * 100. É um indicador de eficiência que mostra a porcentagem da receita que resta após todos os custos, despesas, juros e impostos. Uma margem líquida alta sugere forte lucratividade e eficiência geral, enquanto valores baixos indicam pressão de custos ou baixa rentabilidade.</td>
+        <td>A Margem Líquida está em uma faixa alta, sugerindo boa rentabilidade final e eficiência geral. Essa faixa é comum em empresas com forte poder de precificação, controle de custos ou operações otimizadas, como tecnologia, bens de consumo de marca ou serviços especializados.</td>
+    </tr>
+    
+    <tr style="background-color:#d4edda;">
+        <td>PL/Ativos</td>
+        <td>Estrutura de Capital</td>
+        <td>0.65</td>
+        <td>Ótimo</td>
+        <td>PL/Ativos > 0.6</td>
+        <td>O PL/Ativos (Patrimônio Líquido sobre Ativos) mede a proporção do patrimônio líquido em relação aos ativos totais da empresa,
+        calculado como (Patrimônio Líquido / Ativos Totais). É um indicador de estrutura de capital que avalia o grau de financiamento
+        dos ativos por capital próprio versus dívida. Um valor alto sugere baixa alavancagem, enquanto valores baixos ou negativos indicam
+        alta dependência de dívida ou fragilidade financeira.</td>
+        <td>O PL/Ativos é extremamente alto, indicando que a maior parte dos ativos é financiada por capital próprio, sugerindo baixa alavancagem e robustez financeira. Essa faixa é típica de empresas com forte geração de caixa ou baixa necessidade de capital, como software ou serviços especializados.</td>
+    </tr>
+    
+    <tr style="background-color:#d4edda;">
+        <td>Div. liquida/EBIT</td>
+        <td>Solvência</td>
+        <td>-0.63</td>
+        <td>Ótimo</td>
+        <td>Dívida Líquida / EBIT < 0</td>
+        <td>A Dívida Líquida / EBIT mede o nível de endividamento da empresa em relação ao seu lucro antes de juros e impostos (EBIT). É calculado
+        como (Dívida Líquida / EBIT), onde Dívida Líquida = Dívida Total - Caixa e Equivalentes. É um indicador de solvência que avalia
+        a capacidade da empresa de pagar suas dívidas com seu lucro operacional. Um valor baixo sugere baixa alavancagem, enquanto valores altos indicam risco financeiro elevado.</td>
+        <td>Um valor negativo pode indicar que a empresa possui mais caixa do que dívidas ou que o EBIT é negativo. Um excesso de caixa sugere uma posição financeira sólida, mas um EBIT negativo aponta para prejuízo operacional, exigindo análise cuidadosa do contexto.</td>
+    </tr>
+    
+    <tr style="background-color:#d4edda;">
+        <td>Divida liquida</td>
+        <td>Alavancagem</td>
+        <td>-14366814000.0</td>
+        <td>Ótimo</td>
+        <td>Dívida Líquida < 0</td>
+        <td>A Dívida Líquida representa o total de obrigações financeiras da empresa, descontada a disponibilidade de caixa e equivalentes,
+        calculada como (Dívida Bruta - Caixa e Equivalentes de Caixa). É um indicador de alavancagem que avalia o endividamento real,
+        considerando os recursos líquidos disponíveis. Um valor baixo ou negativo sugere boa saúde financeira, enquanto valores altos indicam
+        maior risco financeiro.</td>
+        <td>Uma Dívida Líquida negativa indica que o caixa e equivalentes superam a dívida bruta, sugerindo robustez financeira. Comum em empresas com forte geração de caixa, como tecnologia ou serviços, isso reflete baixa alavancagem e alta capacidade de honrar obrigações.</td>
+    </tr>
+    
+    <tr style="background-color:#d4edda;">
+        <td>Div. liquida/PL</td>
+        <td>Solvência</td>
+        <td>-0.16</td>
+        <td>Ótimo</td>
+        <td>Dívida Líquida / PL < 0</td>
+        <td>A Dívida Líquida / Patrimônio Líquido mede o nível de endividamento da empresa em relação ao seu patrimônio líquido. É calculado
+        como (Dívida Líquida / Patrimônio Líquido), onde Dívida Líquida = Dívida Total - Caixa e Equivalentes. É um indicador de solvência
+        que avalia a proporção de dívida financiada em relação ao capital próprio dos acionistas. Um valor baixo sugere baixa alavancagem,
+        enquanto valores altos indicam risco financeiro elevado.</td>
+        <td>Um valor negativo pode indicar que a empresa possui mais caixa do que dívidas ou que o patrimônio líquido é negativo. Um excesso de caixa sugere uma posição financeira sólida, mas um patrimônio líquido negativo aponta para prejuízos acumulados ou problemas estruturais, exigindo análise detalhada.</td>
+    </tr>
+    
+    <tr style="background-color:#d4edda;">
+        <td>M. EBIT</td>
+        <td>Eficiência Operacional</td>
+        <td>0.2506</td>
+        <td>Ótimo</td>
+        <td>Margem EBIT > 25%</td>
+        <td>A Margem EBIT mede a rentabilidade operacional da empresa, calculada como
+        (EBIT / Receita Líquida) * 100. É um indicador de eficiência que mostra a porcentagem da receita que resta após custos operacionais, antes de juros e impostos. Uma margem EBIT alta sugere forte desempenho operacional, enquanto valores baixos indicam ineficiência ou pressão de custos.</td>
+        <td>A Margem EBIT é extremamente alta, indicando eficiência operacional excepcional e forte poder de precificação. Essa faixa é típica de empresas com marcas premium, baixa concorrência ou modelos de negócios escaláveis, como software ou serviços especializados, onde os lucros operacionais são elevados.</td>
+    </tr>
+    
+    <tr style="background-color:#f5c6cb;">
+        <td>Divida bruta</td>
+        <td>Alavancagem</td>
+        <td>3157764000.0</td>
+        <td>Crítico</td>
+        <td>Dívida Bruta / Ativos > 1.0</td>
+        <td>A Dívida Bruta representa o total de obrigações financeiras da empresa, incluindo empréstimos, financiamentos e outros passivos
+        com custo financeiro, de curto e longo prazo. É um indicador de alavancagem que avalia o montante absoluto de dívida, sem considerar
+        a disponibilidade de caixa. Um valor alto sugere maior risco financeiro, enquanto valores baixos indicam menor dependência de dívida.</td>
+        <td>A Dívida Bruta excede os ativos totais, indicando alavancagem extrema e fragilidade financeira grave. Comum em empresas em crise ou com má gestão financeira, isso sugere risco elevado de insolvência e dificuldade em honrar obrigações financeiras.</td>
+    </tr>
+    
+    <tr style="background-color:#d4edda;">
+        <td>Div. liquida/EBITDA</td>
+        <td>Solvência</td>
+        <td>-0.43</td>
+        <td>Ótimo</td>
+        <td>Dívida Líquida / EBITDA < 0</td>
+        <td>A Dívida Líquida / EBITDA mede o nível de endividamento da empresa em relação ao seu lucro operacional antes de juros, impostos, depreciação e amortização (EBITDA). É calculado
+        como (Dívida Líquida / EBITDA). É um indicador de solvência que avalia a capacidade da empresa de pagar suas dívidas com sua geração de caixa operacional. Um valor baixo sugere baixa alavancagem,
+        enquanto valores altos indicam risco financeiro elevado.</td>
+        <td>Um valor negativo indica que a empresa possui mais caixa e equivalentes do que dívidas, sugerindo uma posição financeira sólida com baixa alavancagem. Isso pode ocorrer em empresas com alta geração de caixa ou reservas elevadas, permitindo investimentos ou distribuições aos acionistas.</td>
+    </tr>
+    
+    <tr style="background-color:#cce5ff;">
+        <td>ROA</td>
+        <td>Rentabilidade</td>
+        <td>0.1038</td>
+        <td>Bom</td>
+        <td>7 < ROA <= 12%</td>
+        <td>O ROA (Retorno sobre Ativos) mede a rentabilidade da empresa em relação aos seus ativos totais, calculado
+        como (Lucro Líquido / Ativos Totais) * 100. É um indicador de eficiência que avalia a capacidade da empresa
+        de gerar lucros utilizando seus ativos. Um ROA alto sugere eficiência na gestão de ativos, enquanto valores
+        baixos ou negativos indicam ineficiência ou prejuízos.</td>
+        <td>O ROA está em uma faixa alta, sugerindo boa rentabilidade na utilização dos ativos. Essa faixa é comum em empresas com eficiência operacional sólida, poder de precificação ou ativos bem geridos, como tecnologia ou bens de consumo, indicando capacidade de gerar retornos robustos.</td>
+    </tr>
+    
+    <tr style="background-color:#f5c6cb;">
+        <td>VPA</td>
+        <td>Valuation</td>
+        <td>5.87</td>
+        <td>Crítico</td>
+        <td>P/VPA > 2.5</td>
+        <td>O VPA (Valor Patrimonial por Ação) mede o valor contábil do patrimônio líquido da empresa por ação, calculado
+        como (Patrimônio Líquido / Número Total de Ações). É um indicador de valuation que avalia o valor intrínseco
+        de cada ação com base nos ativos líquidos da empresa. Um VPA alto sugere maior respaldo patrimonial por ação,
+        enquanto valores baixos ou negativos indicam fragilidade financeira ou patrimônio reduzido.</td>
+        <td>O P/VPA é extremamente elevado, sugerindo forte sobrevalorização em relação ao valor patrimonial por ação. Essa faixa é típica de bolhas de mercado, empresas de alto crescimento especulativo ou narrativas hype, onde o preço da ação desconecta significativamente do patrimônio líquido.</td>
+    </tr>
+    
+    <tr style="background-color:#cce5ff;">
+        <td>P/EBIT</td>
+        <td>Valuation</td>
+        <td>8.5</td>
+        <td>Bom</td>
+        <td>8 < P/EBIT <= 12</td>
+        <td>O P/EBIT (Preço / EBIT) mede o valor de mercado da empresa em relação ao seu lucro antes de juros e impostos (EBIT), calculado
+        como (Valor de Mercado / EBIT). É um indicador de valuation que avalia se a empresa está cara ou barata com base em sua lucratividade operacional.
+        Um P/EBIT baixo sugere subvalorização, enquanto valores altos indicam sobrevalorização ou expectativas de crescimento futuro.</td>
+        <td>O P/EBIT está em uma faixa equilibrada, sugerindo que o valor de mercado está alinhado com o lucro operacional da empresa. Essa faixa é comum em empresas estáveis com EBIT consistente e crescimento moderado, refletindo confiança do mercado sem excesso de otimismo.</td>
+    </tr>
+    
+    <tr style="background-color:#f5c6cb;">
+        <td>P/Ativo Circ. Liq.</td>
+        <td>Valuation</td>
+        <td>-1.93</td>
+        <td>Crítico</td>
+        <td>P/Ativo Circulante Líquido < 0</td>
+        <td>O P/Ativo Circulante Líquido mede o valor de mercado da empresa em relação ao seu ativo circulante líquido, calculado
+        como (Valor de Mercado / Ativo Circulante Líquido), onde Ativo Circulante Líquido é o Ativo Circulante menos o Passivo Circulante.
+        É um indicador de valuation que avalia a relação entre o preço da empresa e sua liquidez de curto prazo. Um valor baixo sugere
+        subvalorização ou alta liquidez, enquanto valores altos indicam sobrevalorização ou baixa liquidez operacional.</td>
+        <td>Um P/Ativo Circulante Líquido negativo indica que o ativo circulante líquido é negativo, ou seja, o passivo circulante excede o ativo circulante. Isso sugere problemas graves de liquidez de curto prazo, comum em empresas em crise ou com má gestão financeira, indicando risco de insolvência.</td>
+    </tr>
+    
+    <tr style="background-color:#f8d7da;">
+        <td>LPA</td>
+        <td>Rentabilidade</td>
+        <td>0.94</td>
+        <td>Ruim</td>
+        <td>0 <= LPA <= 1</td>
+        <td>O Lucro por Ação (LPA) mede a rentabilidade da empresa por ação, calculado
+        como (Lucro Líquido / Número de Ações em Circulação). É um indicador chave de desempenho
+        que mostra quanto lucro a empresa gera para cada ação. Um LPA alto sugere alta rentabilidade,
+        enquanto valores negativos indicam prejuízos.</td>
+        <td>O LPA está baixo, sugerindo rentabilidade limitada por ação. Isso pode ocorrer em empresas em fase inicial, com altos investimentos ou em setores de baixa margem.</td>
+    </tr>
+    
+    <tr style="background-color:#f8d7da;">
+        <td>P/SR</td>
+        <td>Valuation</td>
+        <td>2.13</td>
+        <td>Ruim</td>
+        <td>2.0 < PSR <= 3.0</td>
+        <td>O PSR (Preço sobre Vendas) mede o valor de mercado da empresa em relação à sua receita líquida, calculado
+        como (Valor de Mercado / Receita Líquida). É um indicador de valuation que avalia se a empresa está cara ou barata
+        com base em sua capacidade de gerar vendas. Um PSR baixo sugere subvalorização, enquanto valores altos indicam
+        sobrevalorização ou expectativas de crescimento futuro.</td>
+        <td>O PSR está consideravelmente elevado, indicando sobrevalorização em relação à receita líquida. Essa faixa é comum em empresas com altas expectativas de crescimento ou em setores premium, como tecnologia, mas o preço reflete otimismo significativo que pode ser arriscado se não sustentado.</td>
+    </tr>
+    </table></body></html>

@@ -1,0 +1,545 @@
+# -*- coding: utf-8 -*-
+"""
+Arquivo: gerar_html_statusinvest_v3_spa.py
+Autor:  M365 Copilot (para Silvio Luiz Puzzovio)
+
+Objetivo
+--------
+Ler um Excel com as 11 colunas esperadas (com tolerância a variações de nomes),
+validar o esquema e gerar UMA única página HTML (SPA) contendo **12 modelos**
+navegáveis por abas, incluindo **switch de tema claro/escuro** (persistência em
+localStorage), **CSS/JS embutidos** (sem dependências externas) e **relatórios de validação**.
+
+Colunas-alvo (normalizadas):
+  Agrupador, Fonte, Ativo, Indicador, Formula, Definicao,
+  Referencia, Valor, Classificacao, Faixa, Descricao
+
+Saídas
+------
+- index_spa.html (a SPA com 12 abas)
+- relatorio_validacao.json, relatorio_stats.json, relatorio_validacao.txt
+- statusinvest_spa.zip (opcional)
+
+Uso
+---
+pip install pandas openpyxl
+python gerar_html_statusinvest_v3_spa.py --input "StatusInvest_html.xlsx" --sheet "IndiRentabilidade" --outdir "saida_spa"
+"""
+
+from __future__ import annotations
+
+# ===================== IMPORTS =====================
+import argparse                # linha de comando
+import json                    # serialização embutida no HTML + relatórios
+import math                    # isnan, isinf
+import os                      # IO de arquivos e diretórios
+import re                      # limpeza numérica robusta
+import sys                     # saída de erros
+import zipfile                 # empacotar a SPA e relatórios
+from typing import Any, Dict, List, Tuple
+
+import pandas as pd            # leitura do Excel (engine openpyxl)
+
+# =============== 1) UTILITÁRIOS DE FORMATAÇÃO ===============
+def format_number_br(value: float | int | None, decimals: int = 2) -> str:
+    """
+    Formata número no padrão pt-BR (milhar '.' e decimal ',').
+    Retorna '-' para None/NaN/Inf.
+    """
+    if value is None:
+        return "-"
+    if isinstance(value, float) and (math.isnan(value) or math.isinf(value)):
+        return "-"
+    try:
+        v = float(value)
+        # en-US: milhar ',' e decimal '.'
+        s = f"{v:,.{decimals}f}"
+        # troca para pt-BR: milhar '.' e decimal ','
+        s = s.replace(",", "X").replace(".", ",").replace("X", ".")
+        return s
+    except Exception:
+        return str(value)
+
+
+def only_numeric_sign(value: Any) -> float | None:
+    """
+    Extrai apenas dígitos, '-' e '.' de um texto e converte para float.
+    Aceita vírgula decimal (converte para '.').
+    """
+    if value is None:
+        return None
+    if isinstance(value, (int, float)):
+        return float(value)
+    txt = str(value).replace(",", ".")
+    txt = re.sub(r"[^0-9\.-]", "", txt)
+    if txt in ("", "-", "."):
+        return None
+    try:
+        return float(txt)
+    except Exception:
+        return None
+
+
+def is_percentual(indicador: str, formula: str) -> bool:
+    """
+    Heurística para exibir Valor como percentual:
+      - Fórmula contém '(%)' ou '* 100'
+      - Indicador contém termos típicos: roe/roa/roic/margem/dy/yield/tag along/dividend
+    """
+    indicador_lc = (indicador or "").lower()
+    formula_lc = (formula or "").lower()
+    if "(%)" in formula_lc or "* 100" in formula_lc:
+        return True
+    for k in ["roe", "roa", "roic", "m. ", "margem", "dy", "d.y", "yield", "tag along", "dividend"]:
+        if k in indicador_lc:
+            return True
+    return False
+
+
+def class_color(classe: str) -> str:
+    """
+    Cor por classificação: Ótimo->verde, Bom->azul, Moderado->âmbar, Ruim->vermelho, Crítico->vinho; default cinza.
+    """
+    mapa = {
+        "ótimo": "#059669", "otimo": "#059669",
+        "bom": "#2563eb",
+        "moderado": "#f59e0b",
+        "ruim": "#ef4444",
+        "crítico": "#7f1d1d", "critico": "#7f1d1d",
+    }
+    return mapa.get((classe or "").strip().lower(), "#6b7280")
+
+
+def safe_html(s: Any) -> str:
+    """
+    Escapa caracteres especiais para inserir texto em HTML com segurança.
+    """
+    if s is None:
+        return ""
+    return (str(s)
+            .replace("&", "&amp;")
+            .replace("<", "&lt;")
+            .replace(">", "&gt;")
+            .replace('"', "&quot;")
+            .replace("'", "&#39;"))
+
+# =============== 2) LEITURA, NORMALIZAÇÃO E VALIDAÇÃO ===============
+# Colunas obrigatórias (normalizadas)
+REQUIRED_COLS = [
+    "Agrupador", "Fonte", "Ativo", "Indicador", "Formula", "Definicao",
+    "Referencia", "Valor", "Classificacao", "Faixa", "Descricao"
+]
+
+# Mapa de aliases -> nome normalizado
+COL_ALIAS = {
+    "Agrupador": "Agrupador",
+    "Fonte": "Fonte",
+    "Ativo": "Ativo",
+    "Indicador": "Indicador",
+    "Formula": "Formula", "Fórmula": "Formula",
+    "Definição": "Definicao", "Definicao": "Definicao",
+    "Referencia": "Referencia", "Referência": "Referencia",
+    "Valor": "Valor",
+    "Classificacao": "Classificacao", "Classificação": "Classificacao",
+    "Faixa": "Faixa",
+    "Descricao": "Descricao", "Descrição": "Descricao",
+}
+
+def read_excel(input_path: str, sheet: str | int | None) -> pd.DataFrame:
+    """
+    Lê a aba indicada (ou a primeira) com engine openpyxl e padroniza nomes das colunas (trim).
+    """
+    try:
+        df = pd.read_excel(input_path, sheet_name=sheet if sheet is not None else 0, engine="openpyxl")
+    except Exception:
+        # Se a aba nomeada não existir, tenta a primeira
+        df = pd.read_excel(input_path, sheet_name=0, engine="openpyxl")
+    df.columns = [str(c).strip() for c in df.columns]
+    return df
+
+
+def normalize_columns(df: pd.DataFrame) -> Tuple[pd.DataFrame, Dict[str, str]]:
+    """
+    Renomeia colunas usando COL_ALIAS, preservando nomes desconhecidos.
+    Retorna: (df_renomeado, mapping original->normalizado)
+    """
+    mapping = {c: COL_ALIAS.get(c, c) for c in df.columns}
+    return df.rename(columns=mapping).copy(), mapping
+
+
+def ensure_required_columns(df: pd.DataFrame) -> pd.DataFrame:
+    """
+    Garante a existência das colunas obrigatórias (cria vazias se faltarem).
+    """
+    for c in REQUIRED_COLS:
+        if c not in df.columns:
+            df[c] = None
+    return df
+
+
+def validate_schema(df: pd.DataFrame, mapping: Dict[str, str]) -> Dict[str, Any]:
+    """
+    Relatório de aderência ao esquema esperado.
+    """
+    normalized_cols = set(df.columns)
+    required = set(REQUIRED_COLS)
+    faltantes = sorted(list(required - normalized_cols))
+    extras = sorted([c for c in df.columns if c not in required])
+    return {
+        "colunas_obrigatorias_presentes": len(faltantes) == 0,
+        "faltantes": faltantes,
+        "extras": extras,
+        "mapeamento_original_para_normalizado": mapping,
+    }
+
+
+def enrich_and_clean(df: pd.DataFrame) -> pd.DataFrame:
+    """
+    Limpa e enriquece:
+      - remove linhas totalmente vazias e sem 'Indicador'
+      - cria: Valor_num, EhPercentual, Valor_fmt, CorClass
+    """
+    df = df.dropna(how="all")
+    if "Indicador" in df.columns:
+        df = df[~df["Indicador"].isna()].copy()
+
+    df["Valor_num"] = df["Valor"].apply(only_numeric_sign)
+
+    if "Formula" not in df.columns:
+        df["Formula"] = ""
+    if "Indicador" not in df.columns:
+        df["Indicador"] = ""
+    df["EhPercentual"] = df.apply(
+        lambda r: is_percentual(str(r.get("Indicador", "")), str(r.get("Formula", ""))),
+        axis=1
+    )
+
+    def _fmt(row) -> str:
+        v = row.get("Valor_num")
+        if v is None or (isinstance(v, float) and math.isnan(v)):
+            return "-"
+        return f"{format_number_br(v*100, 2)}%" if row.get("EhPercentual") else format_number_br(v, 2)
+
+    df["Valor_fmt"] = df.apply(_fmt, axis=1)
+    df["CorClass"] = df["Classificacao"].apply(class_color)
+    return df
+
+
+def make_validation_report(df: pd.DataFrame) -> Dict[str, Any]:
+    """
+    Estatísticas: total, agrupadores, classes, % nulos por coluna,
+    distribuição por classe e matriz (Agrupador x Classificacao).
+    """
+    total = int(df.shape[0])
+    agrupadores = sorted([a for a in df["Agrupador"].dropna().unique().tolist() if str(a).strip() != ""])
+    classes = sorted([c for c in df["Classificacao"].dropna().unique().tolist() if str(c).strip() != ""])
+
+    null_ratio = {}
+    for c in REQUIRED_COLS:
+        n = int(df[c].isna().sum()) if c in df.columns else None
+        null_ratio[c] = {
+            "nulos": n,
+            "pct": (float(n) / float(total) * 100.0) if (n is not None and total > 0) else None
+        }
+
+    dist_class = df["Classificacao"].fillna("Sem classificação").value_counts().to_dict()
+
+    pivot = (df.pivot_table(index="Agrupador", columns="Classificacao", values="Indicador",
+                            aggfunc="count", fill_value=0) if total > 0 else pd.DataFrame())
+    matriz = pivot.to_dict(orient="index") if not pivot.empty else {}
+    return {
+        "total_linhas": total,
+        "agrupadores": agrupadores,
+        "n_agrupadores": len(agrupadores),
+        "classes": classes,
+        "n_classes": len(classes),
+        "nulos_por_coluna": null_ratio,
+        "distribuicao_por_classificacao": dist_class,
+        "matriz_agrupador_classificacao": matriz,
+    }
+
+# =============== 3) JSONs PARA O FRONT (SPA) ===============
+def serialize_for_front(df: pd.DataFrame) -> Tuple[str, str, str, str]:
+    """
+    Retorna strings JSON:
+      DATA (linhas), CONT_CLASS (contagem por class),
+      CONT_AGRUP_CLASS (Agrupador->classe->contagem), AGRUPADORES (lista).
+    """
+    recs: List[Dict[str, Any]] = []
+    for _, r in df.iterrows():
+        recs.append({
+            "Agrupador": str(r.get("Agrupador", "") or ""),
+            "Fonte": str(r.get("Fonte", "") or ""),
+            "Ativo": str(r.get("Ativo", "") or ""),
+            "Indicador": str(r.get("Indicador", "") or ""),
+            "Formula": str(r.get("Formula", "") or ""),
+            "Definicao": str(r.get("Definicao", "") or ""),
+            "Referencia": str(r.get("Referencia", "") or ""),
+            "Valor": None if pd.isna(r.get("Valor_num")) else float(r.get("Valor_num")),
+            "ValorFmt": str(r.get("Valor_fmt", "") or ""),
+            "Classificacao": str(r.get("Classificacao", "") or ""),
+            "Faixa": str(r.get("Faixa", "") or ""),
+            "Descricao": str(r.get("Descricao", "") or ""),
+            "EhPercentual": bool(r.get("EhPercentual", False)),
+            "CorClass": str(r.get("CorClass", "") or ""),
+        })
+    data_json = json.dumps(recs, ensure_ascii=False)
+
+    cont_class = df["Classificacao"].fillna("Sem classificação").value_counts().to_dict()
+    cont_class_json = json.dumps(cont_class, ensure_ascii=False)
+
+    cont_ag = (df.groupby(["Agrupador", "Classificacao"]).size().unstack(fill_value=0)
+               if df.shape[0] else pd.DataFrame())
+    cont_ag_json = json.dumps(cont_ag.to_dict(orient="index") if not cont_ag.empty else {}, ensure_ascii=False)
+
+    grupos = sorted([a for a in df["Agrupador"].dropna().unique().tolist() if str(a).strip() != ""])
+    grupos_json = json.dumps(grupos, ensure_ascii=False)
+
+    return data_json, cont_class_json, cont_ag_json, grupos_json
+# =============== 4) CSS/JS BASE (DARK/LIGHT + TABS) ===============
+SPA_CSS = r"""
+:root{
+  /* tema escuro (default) */
+  --bg:#0b1020; --panel:#111827; --panel-2:#0f172a; --text:#e5e7eb; --muted:#94a3b8; --border:#1f2937; --accent:#38bdf8;
+}
+html[data-theme='light']{
+  /* tema claro */
+  --bg:#ffffff; --panel:#ffffff; --panel-2:#f8fafc; --text:#0f172a; --muted:#334155; --border:#e5e7eb; --accent:#0369a1;
+}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{
+  margin:0; padding:24px; font-family:Inter, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial;
+  background:var(--bg); color:var(--text);
+}
+.container{max-width:1240px; margin:0 auto}
+.header{display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:16px}
+.title{font-size:22px; font-weight:700}
+.controls{display:flex; align-items:center; gap:10px}
+button,select,input{border:1px solid var(--border); background:var(--panel-2); color:var(--text); border-radius:8px; padding:8px 10px}
+.card{background:var(--panel); border:1px solid var(--border); border-radius:12px; padding:16px}
+.table{width:100%; border-collapse:separate; border-spacing:0}
+.table th,.table td{padding:10px 12px; border-bottom:1px solid var(--border)}
+.table thead th{position:sticky; top:0; background:var(--panel-2); text-align:left; font-weight:600}
+.table tbody tr:hover{background:var(--panel-2)}
+.mono{font-family: ui-monospace, Menlo, Consolas, "SFMono-Regular", monospace}
+.grid{display:grid; gap:16px}
+.grid.cols-auto{grid-template-columns:repeat(auto-fill,minmax(300px,1fr))}
+.grid.cols-2{grid-template-columns:repeat(2,1fr)}
+.grid.cols-12{grid-template-columns:repeat(12,1fr)}
+.badge{display:inline-flex; gap:8px; padding:4px 10px; border-radius:999px; border:1px solid var(--border); color:var(--muted); background:var(--panel-2); font-size:12px}
+.chip{display:inline-block; padding:4px 8px; border-radius:999px; font-size:12px; border:1px solid var(--border); color:var(--muted)}
+.kv{display:grid; grid-template-columns:160px 1fr; gap:8px}
+.bar{height:10px; background:var(--panel-2); border:1px solid var(--border); border-radius:999px; overflow:hidden}
+.bar>span{display:block; height:100%}
+.footer{margin-top:24px; color:var(--muted); font-size:12px}
+
+/* Abas */
+.tabs{display:flex; gap:6px; flex-wrap:wrap; margin-bottom:12px}
+.tab-btn{
+  background:var(--panel); color:var(--text); border:1px solid var(--border);
+  padding:8px 12px; border-radius:8px; cursor:pointer; font-weight:600;
+}
+.tab-btn.active{outline:2px solid var(--accent)}
+.tab-panel{display:none}
+.tab-panel.active{display:block}
+
+/* Switch tema */
+.theme-switch{display:flex; align-items:center; gap:8px}
+.switch{
+  position:relative; width:48px; height:26px; background:var(--panel-2); border:1px solid var(--border); border-radius:999px; cursor:pointer;
+}
+.switch i{
+  position:absolute; top:2px; left:2px; width:22px; height:22px; border-radius:50%;
+  background:linear-gradient(180deg,var(--accent),#0ea5e9);
+  transition:left .2s ease;
+}
+html[data-theme='light'] .switch i{ left:24px; }
+
+/* Links */
+a{ color:var(--accent); text-decoration:none }
+a:hover{ text-decoration:underline }
+"""
+
+SPA_JS_COMMON = r"""
+// ---------- Utilidades ----------
+function hashCode(str){let h=0; for(let i=0;i<(str||'').length;i++){h=((h<<5)-h)+str.charCodeAt(i); h|=0;} return h;}
+function stableColor(text){const h=Math.abs(hashCode(text||''))%360; return `hsl(${h} 70% 45%)`;}
+function truncate(t,n){return (t||'').length>n ? (t.substring(0,n-1)+'…') : (t||'');}
+
+// ---------- Tema (dark/light) ----------
+(function initTheme(){
+  const saved = localStorage.getItem('theme');
+  const cur = saved==='light' ? 'light' : 'dark';
+  document.documentElement.setAttribute('data-theme', cur);
+  const lbl = document.getElementById('theme-label');
+  if(lbl){ lbl.textContent = (cur==='light' ? 'Claro' : 'Escuro'); }
+})();
+function toggleTheme(){
+  const d = document.documentElement;
+  const cur = d.getAttribute('data-theme')==='light' ? 'light' : 'dark';
+  const next = cur==='light' ? 'dark' : 'light';
+  d.setAttribute('data-theme', next);
+  localStorage.setItem('theme', next);
+  const lbl = document.getElementById('theme-label');
+  if(lbl){ lbl.textContent = (next==='light' ? 'Claro' : 'Escuro'); }
+}
+
+// ---------- Tabs ----------
+function initTabs(){
+  const btns = document.querySelectorAll('.tab-btn');
+  const panels = document.querySelectorAll('.tab-panel');
+  function activate(id){
+    btns.forEach(b=>b.classList.toggle('active', b.dataset.target===id));
+    panels.forEach(p=>p.classList.toggle('active', '#'+p.id===id));
+    // optionally scroll to top of panel:
+    // document.querySelector(id).scrollIntoView({behavior:'smooth', block:'start'});
+  }
+  btns.forEach(b=>{
+    b.addEventListener('click', ()=> activate(b.dataset.target));
+  });
+  // ativa a primeira aba
+  if(btns.length){ activate(btns[0].dataset.target); }
+}
+
+// ---------- Dados globais (injetados pelo Python) ----------
+// const DATA = [...]; const CONT_CLASS = {...}; const CONT_AGRUP_CLASS = {...}; const AGRUPADORES = [...];
+
+// ---------- Renderizadores de cada aba ----------
+
+// Ex1 – Tabela completa
+function renderEx1(){
+  const sel = document.getElementById('ex1_selClass');
+  const classes = [...new Set(DATA.map(d=>d.Classificacao).filter(Boolean))].sort();
+  classes.forEach(c=>{ const o=document.createElement('option'); o.value=c; o.textContent=c; sel.appendChild(o); });
+
+  const tbody = document.querySelector('#ex1_tbl tbody');
+  const total = document.getElementById('ex1_total');
+  const busca = document.getElementById('ex1_busca');
+
+  function render(){
+    const q = (busca.value||'').toLowerCase();
+    const csel = sel.value||'';
+    const rows = DATA.filter(d=>{
+      const txt = `${d.Agrupador} ${d.Fonte} ${d.Ativo} ${d.Indicador} ${d.Formula} ${d.Definicao} ${d.Referencia} ${d.ValorFmt} ${d.Classificacao} ${d.Faixa} ${d.Descricao}`.toLowerCase();
+      const okTxt = !q || txt.includes(q);
+      const okCls = !csel || d.Classificacao===csel;
+      return okTxt && okCls;
+    });
+    tbody.innerHTML='';
+    for(const d of rows){
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td>${d.Agrupador||''}</td><td>${d.Fonte||''}</td><td>${d.Ativo||''}</td>
+        <td>${d.Indicador||''}</td>
+        <td><small class="mono">${(d.Formula||'').replaceAll('<','&lt;')}</small></td>
+        <td>${truncate(d.Definicao, 140)}</td>
+        <td>${d.Referencia||''}</td>
+        <td><strong>${d.ValorFmt||'-'}</strong></td>
+        <td><span class="chip" style="border-color:${d.CorClass}; color:${d.CorClass}">${d.Classificacao||''}</span></td>
+        <td>${d.Faixa||''}</td>
+        <td>${truncate(d.Descricao, 200)}</td>`;
+      tbody.appendChild(tr);
+    }
+    total.textContent = rows.length;
+  }
+
+  document.querySelectorAll('#ex1_tbl thead th').forEach(th=>{
+    th.style.cursor='pointer';
+    th.addEventListener('click', ()=>{
+      const key = th.dataset.k; const asc = th.dataset.asc !== 'true';
+      DATA.sort((a,b)=> (a[key]||'').toString().localeCompare((b[key]||'').toString(),'pt-BR',{numeric:true})*(asc?1:-1));
+      th.dataset.asc = asc; render();
+    });
+  });
+  busca.addEventListener('input', render);
+  sel.addEventListener('change', render);
+  render();
+}
+
+// Ex2 – Cards
+function renderEx2(){
+  const wrap = document.getElementById('ex2_cards');
+  const total = document.getElementById('ex2_total');
+  wrap.innerHTML='';
+  for(const d of DATA){
+    const bd = d.CorClass || '#6b7280';
+    const el = document.createElement('div'); el.className='card'; el.style.borderColor=bd;
+    el.innerHTML = `
+      <div style="display:flex; justify-content:space-between; align-items:center">
+        <h3 style="margin:0">${d.Indicador||''}</h3>
+        <span class="chip" style="border-color:${bd}; color:${bd}">${d.Classificacao||''}</span>
+      </div>
+      <div style="margin:8px 0 12px" class="mono">Valor: <strong>${d.ValorFmt||'-'}</strong></div>
+      <div class="kv">
+        <div>Agrupador</div><div>${d.Agrupador||''}</div>
+        <div>Fonte</div><div>${d.Fonte||''}</div>
+        <div>Ativo</div><div>${d.Ativo||''}</div>
+        <div>Fórmula</div><div><small class="mono">${(d.Formula||'').replaceAll('<','&lt;')}</small></div>
+        <div>Definição</div><div>${(d.Definicao||'')}</div>
+        <div>Referência</div><div>${d.Referencia||''}</div>
+        <div>Faixa</div><div>${d.Faixa||''}</div>
+        <div>Descrição</div><div>${d.Descricao||''}</div>
+      </div>`;
+    wrap.appendChild(el);
+  }
+  total.textContent = DATA.length;
+}
+
+// Ex3 – Lista + filtros
+function renderEx3(){
+  const q=document.getElementById('ex3_q'); const g=document.getElementById('ex3_g');
+  const list=document.getElementById('ex3_list'); const chips=document.getElementById('ex3_chips'); const nagr=document.getElementById('ex3_nagr');
+  AGRUPADORES.forEach(a=>{const o=document.createElement('option'); o.value=a; o.textContent=a; g.appendChild(o);});
+  nagr.textContent = AGRUPADORES.length;
+
+  const classes=[...new Set(DATA.map(d=>d.Classificacao).filter(Boolean))];
+  let classActive=new Set();
+  for(const c of classes){
+    const s=document.createElement('span'); s.className='chip'; s.style.borderColor='var(--border)'; s.style.cursor='pointer'; s.textContent=c;
+    s.onclick=()=>{ if(classActive.has(c)){classActive.delete(c); s.style.color=''; s.style.borderColor='var(--border)';}
+                    else{classActive.add(c); s.style.color='var(--accent)'; s.style.borderColor='var(--accent)';}
+                    render(); };
+    chips.appendChild(s);
+  }
+
+  function render(){
+    const term=(q.value||'').toLowerCase(); const ag=g.value||'';
+    const rows=DATA.filter(d=>{
+      const okText=!term||(`${d.Agrupador} ${d.Fonte} ${d.Ativo} ${d.Indicador} ${d.Formula} ${d.Definicao} ${d.Referencia} ${d.ValorFmt} ${d.Classificacao} ${d.Faixa} ${d.Descricao}`.toLowerCase().includes(term));
+      const okAgr=!ag||d.Agrupador===ag; const okClass=classActive.size===0||classActive.has(d.Classificacao);
+      return okText && okAgr && okClass;
+    });
+    list.innerHTML='';
+    for(const d of rows){
+      const div=document.createElement('div'); div.className='card'; div.style.marginBottom='10px';
+      div.innerHTML=`
+        <div style="display:flex; gap:12px; align-items:center">
+          <div style="width:44px; height:44px; border-radius:50%; background:${stableColor(d.Indicador||'?')}; display:flex; align-items:center; justify-content:center; font-weight:700">${(d.Indicador||'?').slice(0,2).toUpperCase()}</div>
+          <div style="flex:1">
+            <div style="display:flex; justify-content:space-between; align-items:center"><strong>${d.Indicador||''}</strong>
+              <span class="chip" style="border-color:${d.CorClass}; color:${d.CorClass}">${d.Classificacao||''}</span></div>
+            <div><small>${d.Agrupador||''} • Valor: <strong>${d.ValorFmt||'-'}</strong> • Faixa: ${d.Faixa||'-'}</small></div>
+          </div>
+        </div>
+        <details style="margin-top:8px"><summary style="cursor:pointer; color:var(--accent)">Ver todos os campos</summary>
+          <div class="kv" style="margin-top:8px">
+            <div>Agrupador</div><div>${d.Agrupador||''}</div>
+            <div>Fonte</div><div>${d.Fonte||''}</div>
+            <div>Ativo</div><div>${d.Ativo||''}</div>
+            <div>Fórmula</div><div><small class="mono">${(d.Formula||'').replaceAll('<','&lt;')}</small></div>
+            <div>Definição</div><div>${d.Definicao||''}</div>
+            <div>Referência</div><div>${d.Referencia||''}</div>
+            <div>Descrição</div><div>${d.Descricao||''}</div>
+          </div>
+        </details>`;
+      list.appendChild(div);
+    }
+  }
+  q.addEventListener('input', render); g.addEventListener('change', render); render();
+}
+
+// Ex4 – Barras (normalização min–max por Agrupador)
+function renderEx4(){
+  const wrap = document.getElementById('ex4_wrap');
+  //

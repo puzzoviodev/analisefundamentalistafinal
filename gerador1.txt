@@ -1,0 +1,931 @@
+# -*- coding: utf-8 -*-
+"""
+Arquivo: gerar_html_statusinvest.py
+Autor:  M365 Copilot (ajustado para Silvio Luiz Puzzovio)
+Objetivo:
+    Ler um arquivo Excel (.xlsx), extrair os dados da planilha (primeira aba ou aba indicada),
+    normalizar as colunas e gerar 6 variações de páginas HTML autossuficientes:
+      1) Tabela responsiva com busca e ordenação
+      2) Cards em grid com detalhes (fórmula/descrição)
+      3) Lista com busca + filtros (agrupador e classificação via chips)
+      4) Comparativo com barras por Agrupador (normalização min–max por grupo)
+      5) Catálogo com “imagens” (avatares coloridos gerados a partir do Indicador)
+      6) Relatório & Resumo (contagem por classificação, mosaico por agrupador, top 10)
+    Além disso, compacta os arquivos em um ZIP (opcional).
+
+Formato esperado (nomes tolerantes; acentos/variações mapeados):
+    Agrupador | Fonte | Ativo | Indicador | Formula | Definição | Referencia | Valor
+    | Classificacao | Faixa | Descricao
+
+Observações:
+  - Percentuais: se 'Formula' contiver '(%)' ou o 'Indicador' tiver palavras-chave como
+    'ROE', 'ROA', 'ROIC', 'Margem', 'M. ', 'DY', 'D.Y', 'Tag Along', etc., tratamos o
+    Valor como proporção (0-1) e exibimos multiplicado por 100 seguido de '%'.
+  - Formatação: pt-BR (ponto de milhar, vírgula decimal).
+  - Cores por classificação: Ótimo (verde), Bom (azul), Moderado (âmbar), Ruim (vermelho), Crítico (vinho).
+
+Dependências:
+    pip install pandas openpyxl
+"""
+
+from __future__ import annotations  # permite anotações de tipo pós-definição (forward refs)
+import argparse                   # parse de argumentos de linha de comando
+import json                       # serialização dos dados para embutir no <script>
+import math                       # funções matemáticas auxiliares (isnan, etc.)
+import os                         # manipulação de sistema de arquivos
+import re                         # expressões regulares (limpeza numérica)
+import sys                        # saída/erros e finalização
+import zipfile                    # criação de arquivo .zip com os HTMLs
+from typing import Any, Dict, List
+
+import pandas as pd               # leitura e manipulação de planilhas (engine openpyxl)
+
+
+# ==========================
+# 1) Utilitários de formato
+# ==========================
+
+def format_number_br(value: float | int | None, decimals: int = 2) -> str:
+    """
+    Formata números no padrão pt-BR:
+      - separador de milhar: '.'
+      - separador decimal:  ','
+    Retorna '-' para None/NaN.
+    """
+    if value is None:
+        return "-"
+    if isinstance(value, float) and (math.isnan(value) or math.isinf(value)):
+        return "-"
+    try:
+        v = float(value)  # força conversão para padronizar
+        # primeiro formata em estilo 'en-US' (milhar = ',', decimal = '.')
+        s = f"{v:,.{decimals}f}"
+        # troca para pt-BR (milhar = '.', decimal = ',')
+        s = s.replace(",", "X").replace(".", ",").replace("X", ".")
+        return s
+    except Exception:
+        # se não der, devolve string crua
+        return str(value)
+
+
+def only_numeric_sign(value: Any) -> float | None:
+    """
+    Extrai apenas dígitos, sinal '-' e ponto (decimal) de um texto e converte para float.
+    Aceita valores com vírgula decimal (converte vírgula -> ponto).
+    Retorna None se não conseguir converter.
+    """
+    if value is None:
+        return None
+    if isinstance(value, (int, float)):
+        # se já for numérico, retorna como float
+        return float(value)
+
+    # Converte para string para aplicar limpeza
+    txt = str(value)
+    # Troca vírgula por ponto (caso venha "0,123")
+    txt = txt.replace(",", ".")
+    # Remove qualquer caractere que não seja dígito, ponto ou '-'
+    txt = re.sub(r"[^0-9\.-]", "", txt)
+
+    # Proteção contra strings vazias/ambíguas
+    if txt in ("", "-", "."):
+        return None
+
+    try:
+        return float(txt)
+    except Exception:
+        return None
+
+
+def is_percentual(indicador: str, formula: str) -> bool:
+    """
+    Heurística simples para decidir se um dado 'Valor' deve ser exibido como percentual.
+
+    Regras:
+      - Se a 'formula' contém '(%)' ou '* 100' -> é percentual.
+      - Se 'indicador' contém termos associados a percentuais (roe, roa, roic, margem, dy, d.y, yield, tag along).
+    """
+    indicador_lc = (indicador or "").lower()
+    formula_lc = (formula or "").lower()
+
+    if "(%)" in formula_lc or "* 100" in formula_lc:
+        return True
+
+    keywords = [
+        "roe", "roa", "roic", "m. ", "margem", "dy", "d.y", "yield", "tag along", "dividend"
+    ]
+    return any(k in indicador_lc for k in keywords)
+
+
+def class_color(classe: str) -> str:
+    """
+    Mapeia a classificação textual para uma cor (hex) consistente.
+    Padrões (com/sem acento):
+      - Ótimo -> #059669 (verde)
+      - Bom   -> #2563eb (azul)
+      - Moderado -> #f59e0b (âmbar)
+      - Ruim  -> #ef4444 (vermelho)
+      - Crítico -> #7f1d1d (vinho)
+      - Desconhecido -> #6b7280 (cinza)
+    """
+    mapa = {
+        "ótimo": "#059669",
+        "otimo": "#059669",
+        "bom": "#2563eb",
+        "moderado": "#f59e0b",
+        "ruim": "#ef4444",
+        "crítico": "#7f1d1d",
+        "critico": "#7f1d1d",
+    }
+    return mapa.get((classe or "").strip().lower(), "#6b7280")
+
+
+def safe_html(s: Any) -> str:
+    """
+    Escapa caracteres especiais para evitar quebra de markup quando embutimos textos livres em HTML.
+    """
+    if s is None:
+        return ""
+    return (
+        str(s)
+        .replace("&", "&amp;")
+        .replace("<", "&lt;")
+        .replace(">", "&gt;")
+        .replace('"', "&quot;")
+        .replace("'", "&#39;")
+    )
+
+
+# =====================================
+# 2) Leitura do Excel e normalização DF
+# =====================================
+
+def carregar_planilha(
+    caminho: str,
+    sheet: str | int | None = None,
+    verbose: bool = True
+) -> pd.DataFrame:
+    """
+    Lê o Excel e retorna um DataFrame normalizado com as colunas relevantes.
+    - Se 'sheet' for None: usa a primeira aba.
+    - Se 'sheet' for str: tenta ler pela aba com esse nome; se falhar, volta para a primeira.
+    Normaliza os nomes de colunas para o conjunto abaixo (quando existir):
+      ['Agrupador','Fonte','Ativo','Indicador','Formula','Definicao','Referencia',
+       'Valor','Classificacao','Faixa','Descricao']
+    Remove:
+      - Linhas totalmente vazias
+      - Linhas sem 'Indicador'
+    Adiciona:
+      - 'Valor_num' (float) convertido por only_numeric_sign
+      - 'EhPercentual' (bool) a partir de 'Indicador' e 'Formula'
+      - 'Valor_fmt' (string) formatado para exibição (pt-BR e % quando cabível)
+      - 'CorClass' (string) com a cor mapeada pela classificação
+    """
+    # 2.1) Define engine e seleção da aba
+    try:
+        # sheet=None -> primeira aba
+        sheet_arg = sheet if sheet is not None else 0
+        raw = pd.read_excel(caminho, sheet_name=sheet_arg, engine="openpyxl")
+    except Exception as e:
+        if isinstance(sheet, str):
+            # Tentativa fallback para a primeira aba, caso o nome não exista
+            if verbose:
+                print(f"[aviso] Aba '{sheet}' não encontrada. Lendo a primeira aba...", file=sys.stderr)
+            raw = pd.read_excel(caminho, sheet_name=0, engine="openpyxl")
+        else:
+            raise RuntimeError(f"Erro ao ler o Excel: {e}") from e
+
+    # 2.2) Normaliza nomes de colunas (tira espaços/acentos variantes)
+    raw.columns = [c.strip() for c in raw.columns]
+
+    # 2.3) Mapeia variações de nomes para nomes padrão
+    col_alias = {
+        "Agrupador": "Agrupador",
+        "Fonte": "Fonte",
+        "Ativo": "Ativo",
+        "Indicador": "Indicador",
+        "Formula": "Formula",
+        "Fórmula": "Formula",
+        "Definição": "Definicao",
+        "Definicao": "Definicao",
+        "Referencia": "Referencia",
+        "Referência": "Referencia",
+        "Valor": "Valor",
+        "Classificacao": "Classificacao",
+        "Classificação": "Classificacao",
+        "Faixa": "Faixa",
+        "Descricao": "Descricao",
+        "Descrição": "Descricao",
+    }
+
+    renamed = {c: col_alias.get(c, c) for c in raw.columns}
+    df = raw.rename(columns=renamed).copy()
+
+    # 2.4) Mantém apenas as colunas de interesse que existirem
+    cols_order = [
+        "Agrupador", "Fonte", "Ativo", "Indicador", "Formula",
+        "Definicao", "Referencia", "Valor", "Classificacao", "Faixa", "Descricao"
+    ]
+    avail_cols = [c for c in cols_order if c in df.columns]
+    df = df[avail_cols].copy()
+
+    # 2.5) Limpeza de linhas
+    df.dropna(how="all", inplace=True)               # remove linhas totalmente vazias
+    if "Indicador" in df.columns:
+        df = df[~df["Indicador"].isna()].copy()      # remove linhas sem indicador
+
+    # 2.6) Cria colunas ausentes (para evitar KeyError adiante)
+    for col in ["Agrupador", "Fonte", "Ativo", "Indicador", "Formula",
+                "Definicao", "Referencia", "Valor", "Classificacao",
+                "Faixa", "Descricao"]:
+        if col not in df.columns:
+            df[col] = ""
+
+    # 2.7) Converte Valor para numérico robusto
+    df["Valor_num"] = df["Valor"].apply(only_numeric_sign)
+
+    # 2.8) Detecta percentual
+    df["EhPercentual"] = df.apply(
+        lambda r: is_percentual(str(r.get("Indicador", "")), str(r.get("Formula", ""))),
+        axis=1
+    )
+
+    # 2.9) Formata valor para exibição (pt-BR e com % quando necessário)
+    def _format_valor_display(row) -> str:
+        v = row.get("Valor_num")
+        if v is None or (isinstance(v, float) and math.isnan(v)):
+            return "-"
+        if bool(row.get("EhPercentual")):
+            # Percentual: trata como proporção 0..1 -> multiplica por 100
+            return f"{format_number_br(v * 100, 2)}%"
+        # Numérico padrão com 2 casas
+        return format_number_br(v, 2)
+
+    df["Valor_fmt"] = df.apply(_format_valor_display, axis=1)
+
+    # 2.10) Mapeia cor por classificação
+    df["CorClass"] = df["Classificacao"].apply(class_color)
+
+    return df
+
+
+# ===============================================
+# 3) Serialização para embutir em <script> (JSON)
+# ===============================================
+
+def preparar_registros(df: pd.DataFrame) -> tuple[str, str, str, str]:
+    """
+    A partir do DataFrame cheio, constrói estruturas para o front (JS):
+      - DATA: lista de dicionários com campos de cada linha
+      - CONT_CLASS: contagem simples por classificação
+      - CONT_AGRUP_CLASS: contagem por (Agrupador x Classificacao)
+      - AGRUPADORES: lista ordenada de Agrupadores não vazios
+
+    Retorna 4 strings com JSON (ensure_ascii=False).
+    """
+    # 3.1) Registros por linha
+    records: List[Dict[str, Any]] = []
+    for _, r in df.iterrows():
+        rec = {
+            "Agrupador": str(r.get("Agrupador", "") or ""),
+            "Fonte": str(r.get("Fonte", "") or ""),
+            "Ativo": str(r.get("Ativo", "") or ""),
+            "Indicador": str(r.get("Indicador", "") or ""),
+            "Formula": str(r.get("Formula", "") or ""),
+            "Definicao": str(r.get("Definicao", "") or ""),
+            "Referencia": str(r.get("Referencia", "") or ""),
+            "Valor": None if pd.isna(r.get("Valor_num")) else float(r.get("Valor_num")),
+            "ValorFmt": str(r.get("Valor_fmt", "") or ""),
+            "Classificacao": str(r.get("Classificacao", "") or ""),
+            "Faixa": str(r.get("Faixa", "") or ""),
+            "Descricao": str(r.get("Descricao", "") or ""),
+            "EhPercentual": bool(r.get("EhPercentual", False)),
+            "CorClass": str(r.get("CorClass", "") or ""),
+        }
+        records.append(rec)
+
+    # 3.2) Contagem por classificação
+    cont_class = df["Classificacao"].fillna("Sem classificação").value_counts().to_dict()
+
+    # 3.3) Tabela (Agrupador x Classificacao) -> dict aninhado
+    cont_por_agrup_class = df.groupby(
+        ["Agrupador", "Classificacao"]
+    ).size().unstack(fill_value=0)
+    cont_por_agrup_class_dict = cont_por_agrup_class.to_dict(orient="index") if not cont_por_agrup_class.empty else {}
+
+    # 3.4) Lista de Agrupadores
+    agrupadores = sorted([a for a in df["Agrupador"].dropna().unique().tolist() if str(a).strip() != ""])
+
+    # 3.5) Serializa para JSON (sem escapar acentos)
+    data_json = json.dumps(records, ensure_ascii=False)
+    cont_class_json = json.dumps(cont_class, ensure_ascii=False)
+    cont_por_agrup_class_json = json.dumps(cont_por_agrup_class_dict, ensure_ascii=False)
+    agrupadores_json = json.dumps(agrupadores, ensure_ascii=False)
+
+    return data_json, cont_class_json, cont_por_agrup_class_json, agrupadores_json
+
+
+# ===================================
+# 4) CSS/JS base para todos os HTMLs
+# ===================================
+
+BASE_CSS = r"""
+:root{
+  --bg:#0b1020;          /* fundo escuro elegante */
+  --panel:#111827;       /* blocos/cards */
+  --panel-2:#0f172a;     /* variação mais escura */
+  --text:#e5e7eb;        /* texto primário */
+  --muted:#94a3b8;       /* texto secundário */
+  --border:#1f2937;      /* linhas sutis */
+  --accent:#38bdf8;      /* ciano */
+}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{
+  margin:0; padding:24px; font-family:Inter, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji","Segoe UI Emoji";
+  background:linear-gradient(180deg,#050814, #0b1020 30%, #0b1020 100%);
+  color:var(--text);
+}
+.container{max-width:1200px; margin:0 auto}
+.header{display:flex; align-items:center; justify-content:space-between; margin-bottom:20px}
+.h1{font-size:24px; font-weight:700}
+.badge{display:inline-flex; align-items:center; gap:8px; padding:4px 10px; border-radius:999px; background:#0b1224; color:var(--muted); border:1px solid var(--border); font-size:12px}
+.card{background:var(--panel); border:1px solid var(--border); border-radius:12px; padding:16px}
+.grid{display:grid; grid-template-columns:repeat(12,1fr); gap:16px}
+.mono{font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;}
+hr{border:0; border-top:1px solid var(--border); margin:16px 0}
+small{color:var(--muted)}
+input,select{background:#0c1428; color:var(--text); border:1px solid var(--border); border-radius:8px; padding:10px; outline:none}
+.table{width:100%; border-collapse:separate; border-spacing:0}
+.table th, .table td{padding:10px 12px; border-bottom:1px solid var(--border)}
+.table thead th{position:sticky; top:0; background:var(--panel-2); text-align:left; font-weight:600}
+.table tbody tr:hover{background:#0c1428}
+.kpi{display:flex; gap:12px; align-items:center}
+.kpi .val{font-size:22px; font-weight:700}
+.kpi .lbl{color:var(--muted)}
+.chip{display:inline-block; padding:4px 8px; border-radius:999px; font-size:12px; border:1px solid var(--border); color:var(--muted)}
+.bar{height:10px; background:#0c1428; border:1px solid var(--border); border-radius:999px; overflow:hidden}
+.bar > span{display:block; height:100%}
+.footer{margin-top:24px; color:var(--muted); font-size:12px}
+button{background:linear-gradient(180deg,#0ea5e9,#0369a1); color:white; border:0; padding:10px 12px; border-radius:8px; cursor:pointer}
+button:disabled{opacity:.6; cursor:not-allowed}
+.card h3{margin:0 0 8px 0}
+a{color:#38bdf8;}
+"""
+
+BASE_JS_UTIL = r"""
+// hash simples determinístico a partir de uma string (para cores/avatares)
+function hashCode(str){
+  let h = 0; for(let i=0; i<str.length; i++){ h = ((h<<5)-h) + str.charCodeAt(i); h |= 0; }
+  return h;
+}
+// gera uma cor HSL estável a partir do texto
+function stableColor(text){
+  const h = Math.abs(hashCode(text||'')) % 360;
+  return `hsl(${h} 70% 45%)`;
+}
+// trunca texto com reticências
+function truncate(t, n){ return (t||'').length > n ? (t.substring(0,n-1) + '…') : (t||''); }
+"""
+
+
+# ==================================
+# 5) Template HTML e construtores
+# ==================================
+
+def boilerplate_html(title: str, body_inner: str, data_json: str,
+                     cont_class_json: str, cont_ag_json: str, grupos_json: str,
+                     extra_head: str = "", extra_js: str = "") -> str:
+    """
+    Envelopa cada variação com HEAD/CSS/JS comuns + DATA serializada para consumo no front.
+    """
+    return f"""<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>{safe_html(title)}</title>
+  <style>{BASE_CSS}</style>
+  {extra_head}
+</head>
+<body>
+  <div class="container">
+    {body_inner}
+    <div class="footer">Gerado automaticamente – {safe_html(title)}</div>
+  </div>
+  <script>
+    const DATA = {data_json};
+    const CONT_CLASS = {cont_class_json};
+    const CONT_AGRUP_CLASS = {cont_ag_json};
+    const AGRUPADORES = {grupos_json};
+    {BASE_JS_UTIL}
+  </script>
+  <script>
+  {extra_js}
+  </script>
+</body>
+</html>"""
+
+
+def build_ex1(data_json: str, cont_class_json: str, cont_ag_json: str, grupos_json: str) -> str:
+    """
+    Exemplo 1: Tabela responsiva (busca + ordenação).
+    """
+    head = """
+    <div class="header">
+      <div class="h1">Indicadores – Tabela Responsiva</div>
+      <div class="badge">Total de linhas: <span class="mono" id="total"></span></div>
+    </div>
+    <div class="card">
+      <div style="display:flex; gap:12px; margin-bottom:12px">
+        <input id="busca" placeholder="Buscar por Indicador, Agrupador ou Faixa…" style="flex:1" />
+        <select id="selClass"><option value="">Todas as classificações</option></select>
+      </div>
+      <div style="overflow:auto; max-height:70vh">
+        <table class="table" id="tbl">
+          <thead><tr>
+            <th data-k="Agrupador">Agrupador</th>
+            <th data-k="Indicador">Indicador</th>
+            <th data-k="Valor">Valor</th>
+            <th data-k="Classificacao">Classificação</th>
+            <th data-k="Faixa">Faixa</th>
+            <th data-k="Descricao">Descrição</th>
+          </tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </div>
+    """
+    js = r"""
+    const sel = document.getElementById('selClass');
+    const classes = [...new Set(DATA.map(d => d.Classificacao).filter(Boolean))].sort();
+    for(const c of classes){ const opt = document.createElement('option'); opt.value = c; opt.textContent = c; sel.appendChild(opt); }
+
+    const tbody = document.querySelector('#tbl tbody');
+    const total = document.getElementById('total');
+    const busca = document.getElementById('busca');
+
+    function render(){
+      const q = (busca.value||'').toLowerCase();
+      const csel = sel.value||'';
+      const rows = DATA.filter(d => {
+        const text = `${d.Agrupador} ${d.Indicador} ${d.Faixa} ${d.Descricao}`.toLowerCase();
+        const passText = !q || text.includes(q);
+        const passClass = !csel || d.Classificacao === csel;
+        return passText && passClass;
+      });
+      tbody.innerHTML='';
+      for(const d of rows){
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td>${d.Agrupador||''}</td>
+          <td><div>${d.Indicador||''}</div><small class="mono">${(d.Formula||'').replaceAll('<','&lt;')}</small></td>
+          <td><strong>${d.ValorFmt||'-'}</strong></td>
+          <td><span class="chip" style="border-color:${d.CorClass}; color:${d.CorClass}">${d.Classificacao||''}</span></td>
+          <td>${d.Faixa||''}</td>
+          <td>${truncate(d.Descricao, 180)}</td>`;
+        tbody.appendChild(tr);
+      }
+      total.textContent = rows.length;
+    }
+
+    busca.addEventListener('input', render);
+    sel.addEventListener('change', render);
+
+    // Ordenação simples pelo cabeçalho
+    document.querySelectorAll('#tbl thead th').forEach(th => {
+      th.style.cursor='pointer';
+      th.addEventListener('click', () => {
+        const key = th.dataset.k; const asc = th.dataset.asc !== 'true';
+        DATA.sort((a,b)=> (a[key]||'').toString().localeCompare((b[key]||'').toString(), 'pt-BR', {numeric:true}) * (asc?1:-1));
+        th.dataset.asc = asc;
+        render();
+      });
+    });
+
+    render();
+    """
+    return boilerplate_html("Ex1 – Tabela Responsiva", head, data_json, cont_class_json, cont_ag_json, grupos_json, "", js)
+
+
+def build_ex2(data_json: str, cont_class_json: str, cont_ag_json: str, grupos_json: str) -> str:
+    """
+    Exemplo 2: Cards em grid com detalhes (fórmula e descrição).
+    """
+    head = """
+    <div class="header">
+      <div class="h1">Indicadores – Cards em Grid</div>
+      <div class="badge">Total de cartões: <span class="mono" id="total"></span></div>
+    </div>
+    <div class="grid" style="grid-template-columns:repeat(auto-fill,minmax(280px,1fr));" id="cards"></div>
+    """
+    js = r"""
+    const wrap = document.getElementById('cards');
+    const total = document.getElementById('total');
+    function render(){
+      wrap.innerHTML='';
+      for(const d of DATA){
+        const bd = d.CorClass || '#6b7280';
+        const div = document.createElement('div');
+        div.className='card';
+        div.style.borderColor = bd;
+        div.innerHTML = `
+          <div style="display:flex; justify-content:space-between; align-items:center">
+            <h3>${d.Indicador||''}</h3>
+            <span class="chip" style="border-color:${bd}; color:${bd}">${d.Classificacao||''}</span>
+          </div>
+          <div class="kpi" style="margin:8px 0 12px">
+            <div class="val">${d.ValorFmt||'-'}</div>
+            <div class="lbl">${d.Agrupador||''}</div>
+          </div>
+          <div style="color:var(--muted); margin-bottom:8px"><strong>Faixa:</strong> ${d.Faixa||'-'}</div>
+          <details>
+            <summary style="cursor:pointer; color:#38bdf8">Ver descrição</summary>
+            <div style="margin-top:8px">${(d.Descricao||'').replaceAll('<','&lt;')}</div>
+            <hr/>
+            <div><small class="mono">${(d.Formula||'').replaceAll('<','&lt;')}</small></div>
+          </details>
+        `;
+        wrap.appendChild(div);
+      }
+      total.textContent = DATA.length;
+    }
+    render();
+    """
+    return boilerplate_html("Ex2 – Cards Grid", head, data_json, cont_class_json, cont_ag_json, grupos_json, "", js)
+
+
+def build_ex3(data_json: str, cont_class_json: str, cont_ag_json: str, grupos_json: str) -> str:
+    """
+    Exemplo 3: Lista com busca & filtros (agrupador e chips por classificação).
+    """
+    head = """
+    <div class="header">
+      <div class="h1">Lista com Busca & Filtros</div>
+      <div class="badge">Agrupadores: <span class="mono" id="nagr"></span></div>
+    </div>
+    <div class="card">
+      <div class="grid" style="grid-template-columns: 1fr 200px; align-items:center">
+        <input id="q" placeholder="Buscar…" />
+        <select id="g"><option value="">Todos os agrupadores</option></select>
+      </div>
+      <div style="margin:12px 0; display:flex; gap:8px; flex-wrap:wrap" id="chips"></div>
+      <hr/>
+      <div id="list"></div>
+    </div>
+    """
+    js = r"""
+    const q = document.getElementById('q');
+    const g = document.getElementById('g');
+    const list = document.getElementById('list');
+    const chips = document.getElementById('chips');
+    const nagr = document.getElementById('nagr');
+
+    // popular agrupadores
+    AGRUPADORES.forEach(a=>{const o=document.createElement('option'); o.value=a; o.textContent=a; g.appendChild(o);});
+    nagr.textContent = AGRUPADORES.length;
+
+    // chips de classificação
+    const classes = [...new Set(DATA.map(d=>d.Classificacao).filter(Boolean))];
+    let classActive = new Set();
+    for(const c of classes){
+      const span = document.createElement('span');
+      span.className = 'chip';
+      span.style.borderColor = '#1f2937';
+      span.style.cursor='pointer';
+      span.textContent = c;
+      span.onclick = ()=>{
+        if(classActive.has(c)){ classActive.delete(c); span.style.color=''; span.style.borderColor='#1f2937'; }
+        else { classActive.add(c); span.style.color = '#38bdf8'; span.style.borderColor='#38bdf8'; }
+        render();
+      };
+      chips.appendChild(span);
+    }
+
+    function render(){
+      const term = (q.value||'').toLowerCase();
+      const ag = g.value||'';
+      const rows = DATA.filter(d=>{
+        const okText = !term || (`${d.Indicador} ${d.Descricao} ${d.Faixa} ${d.Agrupador}`.toLowerCase().includes(term));
+        const okAgr = !ag || d.Agrupador===ag;
+        const okClass = classActive.size===0 || classActive.has(d.Classificacao);
+        return okText && okAgr && okClass;
+      });
+      list.innerHTML='';
+      for(const d of rows){
+        const div = document.createElement('div');
+        div.className='card';
+        div.style.marginBottom='10px';
+        div.innerHTML = `
+          <div style="display:flex; gap:12px; align-items:center">
+            <div style="width:44px; height:44px; border-radius:50%; background:${stableColor(d.Indicador||'?')}; display:flex; align-items:center; justify-content:center; font-weight:700">${(d.Indicador||'?').slice(0,2).toUpperCase()}</div>
+            <div style="flex:1">
+              <div style="display:flex; justify-content:space-between; align-items:center">
+                <strong>${d.Indicador||''}</strong>
+                <span class="chip" style="border-color:${d.CorClass}; color:${d.CorClass}">${d.Classificacao||''}</span>
+              </div>
+              <div><small>${d.Agrupador||''} • Valor: <strong>${d.ValorFmt||'-'}</strong> • Faixa: ${d.Faixa||'-'}</small></div>
+            </div>
+          </div>
+          <div style="margin-top:8px; color:var(--muted)">${truncate(d.Descricao, 220)}</div>
+        `;
+        list.appendChild(div);
+      }
+    }
+
+    q.addEventListener('input', render);
+    g.addEventListener('change', render);
+    render();
+    """
+    return boilerplate_html("Ex3 – Lista com Filtros", head, data_json, cont_class_json, cont_ag_json, grupos_json, "", js)
+
+
+def build_ex4(data_json: str, cont_class_json: str, cont_ag_json: str, grupos_json: str, df: pd.DataFrame) -> str:
+    """
+    Exemplo 4: Comparativo com barras por Agrupador (min–max normalizado por grupo).
+    A normalização é feita no back (Python) e passada pronta ao front.
+    """
+    # Pré-processa normalização min-max por agrupador
+    norm_data = []
+    if df.shape[0] > 0:
+        for ag, g in df.groupby("Agrupador"):
+            vals = g["Valor_num"].astype(float)
+            mn, mx = vals.min(), vals.max()
+            rng = (mx - mn) if pd.notna(mx) and pd.notna(mn) else None
+
+            for _, r in g.iterrows():
+                v = r["Valor_num"]
+                if rng and rng != 0 and pd.notna(v):
+                    norm = (float(v) - float(mn)) / float(rng) * 100.0
+                else:
+                    # se não for possível normalizar (ex.: tudo igual), coloca no meio
+                    norm = 50.0
+                norm_data.append({
+                    "Agrupador": str(r.get("Agrupador", "") or ""),
+                    "Indicador": str(r.get("Indicador", "") or ""),
+                    "ValorFmt": str(r.get("Valor_fmt", "") or ""),
+                    "Classificacao": str(r.get("Classificacao", "") or ""),
+                    "CorClass": str(r.get("CorClass", "") or ""),
+                    "Norm": norm
+                })
+
+    norm_json = json.dumps(norm_data, ensure_ascii=False)
+
+    head = """
+    <div class="header">
+      <div class="h1">Comparativo com Barras (por Agrupador)</div>
+      <div class="badge">Normalização min–max dentro de cada agrupador</div>
+    </div>
+    <div id="wrap"></div>
+    """
+    js = f"""
+    const NORM = {norm_json};
+    // Agrupa no front para renderizar seções
+    const byAg = NORM.reduce((acc, r) => {{ (acc[r.Agrupador] ||= []).push(r); return acc; }}, {{}});
+    const wrap = document.getElementById('wrap');
+    for(const ag of Object.keys(byAg).sort()){{
+      const sec = document.createElement('div');
+      sec.className='card';
+      sec.style.marginBottom='12px';
+      sec.innerHTML = `<h3 style="margin-top:0">${{ag}}</h3>`;
+      for(const r of byAg[ag]){{
+        const row = document.createElement('div');
+        row.style.margin = '10px 0';
+        row.innerHTML = `
+          <div style="display:flex; justify-content:space-between; align-items:center; gap:12px">
+            <div style="flex:1"><strong>${{r.Indicador}}</strong> <small class="mono" style="color:var(--muted)">${{r.ValorFmt}}</small></div>
+            <div class="bar" style="flex:3"><span style="width:${{r.Norm.toFixed(1)}}%; background:${{r.CorClass||'#38bdf8'}}"></span></div>
+            <div style="width:120px; text-align:right"><span class="chip" style="border-color:${{r.CorClass}}; color:${{r.CorClass}}">${{r.Classificacao}}</span></div>
+          </div>`;
+        sec.appendChild(row);
+      }}
+      wrap.appendChild(sec);
+    }}
+    """
+    return boilerplate_html("Ex4 – Comparativo Barras", head, data_json, cont_class_json, cont_ag_json, grupos_json, "", js)
+
+
+def build_ex5(data_json: str, cont_class_json: str, cont_ag_json: str, grupos_json: str) -> str:
+    """
+    Exemplo 5: Catálogo com "imagens" (avatares coloridos gerados pelo Indicador).
+    """
+    head = """
+    <div class="header">
+      <div class="h1">Catálogo tipo "cards com avatar"</div>
+      <div class="badge">Sem URLs de imagem – gerando avatar pela sigla do Indicador</div>
+    </div>
+    <div class="grid" style="grid-template-columns:repeat(auto-fill,minmax(260px,1fr));" id="grid"></div>
+    """
+    js = r"""
+    const grid = document.getElementById('grid');
+    for(const d of DATA){
+      const card = document.createElement('div');
+      card.className='card';
+      card.innerHTML = `
+        <div style="display:flex; gap:10px">
+          <div style="width:54px; height:54px; border-radius:12px; background:${stableColor(d.Indicador||'?')}; display:flex; align-items:center; justify-content:center; font-weight:800; font-size:18px">${(d.Indicador||'?').slice(0,2).toUpperCase()}</div>
+          <div style="flex:1">
+            <div style="display:flex; justify-content:space-between; align-items:center">
+              <strong>${d.Indicador||''}</strong>
+              <span class="chip" style="border-color:${d.CorClass}; color:${d.CorClass}">${d.Classificacao||''}</span>
+            </div>
+            <div><small>${d.Agrupador||''}</small></div>
+            <div style="margin-top:6px"><span class="mono">${d.ValorFmt||'-'}</span> • <small>Faixa: ${d.Faixa||'-'}</small></div>
+          </div>
+        </div>
+      `;
+      grid.appendChild(card);
+    }
+    """
+    return boilerplate_html("Ex5 – Catálogo com Avatares", head, data_json, cont_class_json, cont_ag_json, grupos_json, "", js)
+
+
+def build_ex6(data_json: str, cont_class_json: str, cont_ag_json: str, grupos_json: str, df: pd.DataFrame) -> str:
+    """
+    Exemplo 6: Relatório & Resumo (KPIs simples + dois gráficos CSS + top 10).
+    """
+    total_linhas = df.shape[0]
+    total_ag = len(sorted([a for a in df["Agrupador"].dropna().unique().tolist() if str(a).strip() != ""]))
+    total_classes = len([c for c in set(df["Classificacao"].dropna().tolist()) if str(c).strip() != ""])
+
+    head = f"""
+    <div class="header">
+      <div class="h1">Relatório & Resumo</div>
+      <div class="badge">{total_linhas} linhas • {total_ag} agrupadores • {total_classes} classificações</div>
+    </div>
+    <div class="grid">
+      <div class="card" style="grid-column: span 12">
+        <div style="display:flex; gap:20px; flex-wrap:wrap">
+          <div class='kpi'><div class='val'>{total_linhas}</div><div class='lbl'>Total</div></div>
+          <div class='kpi'><div class='val'>{total_ag}</div><div class='lbl'>Agrupadores</div></div>
+          <div class='kpi'><div class='val'>{total_classes}</div><div class='lbl'>Classes</div></div>
+        </div>
+      </div>
+      <div class="card" style="grid-column: span 6">
+        <h3>Distribuição por Classificação</h3>
+        <div id="chartClass"></div>
+      </div>
+      <div class="card" style="grid-column: span 6">
+        <h3>Classificação por Agrupador</h3>
+        <div id="chartAg"></div>
+      </div>
+      <div class="card" style="grid-column: span 12">
+        <h3>Top 10 indicadores (ordem alfabética)</h3>
+        <div id="top10"></div>
+      </div>
+    </div>
+    """
+    js = r"""
+    // Chart 1: Distribuição por classificação (barras horizontais em CSS)
+    const cc = document.getElementById('chartClass');
+    const entries = Object.entries(CONT_CLASS).sort((a,b)=> b[1]-a[1]);
+    for(const [cls, qt] of entries){
+      const row = document.createElement('div'); row.style.margin='8px 0';
+      const color = DATA.find(d=>d.Classificacao===cls)?.CorClass || '#38bdf8';
+      row.innerHTML = `
+        <div style="display:flex; align-items:center; gap:10px">
+          <div style="width:140px">${cls}</div>
+          <div class="bar" style="flex:1"><span style="width:${(qt/Math.max(1, entries[0][1])*100).toFixed(1)}%; background:${color}"></span></div>
+          <div style="width:60px; text-align:right" class="mono">${qt}</div>
+        </div>`;
+      cc.appendChild(row);
+    }
+
+    // Chart 2: Mosaico por agrupador (segmentos por classe)
+    const cag = document.getElementById('chartAg');
+    const ags = Object.keys(CONT_AGRUP_CLASS).sort();
+    for(const ag of ags){
+      const classes = CONT_AGRUP_CLASS[ag];
+      const total = Object.values(classes).reduce((a,b)=>a+b,0);
+      const row = document.createElement('div'); row.style.margin='8px 0';
+      const bar = document.createElement('div'); bar.className='bar'; bar.style.display='flex';
+      for(const [cls, qt] of Object.entries(classes)){
+        const color = DATA.find(d=>d.Classificacao===cls)?.CorClass || '#0ea5e9';
+        const seg = document.createElement('span');
+        seg.style.width = (qt/Math.max(1,total)*100)+'%';
+        seg.style.background = color;
+        bar.appendChild(seg);
+      }
+      row.innerHTML = `<div style="display:flex; align-items:center; gap:10px">
+        <div style="width:220px">${ag}</div>
+        <div style="flex:1"></div>
+        <div style="width:60px; text-align:right" class="mono">${total}</div>
+      </div>`;
+      row.children[0].appendChild(bar);
+      cag.appendChild(row);
+    }
+
+    // Top 10 por ordem alfabética (showcase simples)
+    const top10 = document.getElementById('top10');
+    const list = [...DATA].sort((a,b)=> a.Indicador.localeCompare(b.Indicador, 'pt-BR')).slice(0,10);
+    for(const d of list){
+      const item = document.createElement('div'); item.className='card'; item.style.marginBottom='8px';
+      item.innerHTML = `<div style="display:flex; justify-content:space-between; align-items:center">
+        <div><strong>${d.Indicador}</strong> <small style="color:var(--muted)">${d.Agrupador}</small></div>
+        <div class="mono">${d.ValorFmt}</div>
+      </div>`;
+      top10.appendChild(item);
+    }
+    """
+    return boilerplate_html("Ex6 – Relatório & Resumo", head, data_json, cont_class_json, cont_ag_json, grupos_json, "", js)
+
+
+# =========================
+# 6) Gravação e compactação
+# =========================
+
+def gravar_htmls(df: pd.DataFrame, outdir: str, zipar: bool = True) -> list[str]:
+    """
+    Constrói os 6 HTMLs e os grava em 'outdir'.
+    Se zipar=True, cria 'statusinvest_html_6exemplos.zip' com todos dentro.
+    Retorna a lista de caminhos dos arquivos gerados.
+    """
+    os.makedirs(outdir, exist_ok=True)
+
+    # 6.1) Prepara JSONs para o front
+    data_json, cont_class_json, cont_ag_json, grupos_json = preparar_registros(df)
+
+    # 6.2) Gera conteúdo de cada variação
+    outputs: dict[str, str] = {
+        "ex1_tabela_responsiva.html": build_ex1(data_json, cont_class_json, cont_ag_json, grupos_json),
+        "ex2_cards_grid.html":       build_ex2(data_json, cont_class_json, cont_ag_json, grupos_json),
+        "ex3_lista_filtros.html":    build_ex3(data_json, cont_class_json, cont_ag_json, grupos_json),
+        "ex4_comparativo_barras.html": build_ex4(data_json, cont_class_json, cont_ag_json, grupos_json, df),
+        "ex5_catalogo_imagens.html": build_ex5(data_json, cont_class_json, cont_ag_json, grupos_json),
+        "ex6_relatorio_resumo.html": build_ex6(data_json, cont_class_json, cont_ag_json, grupos_json, df),
+    }
+
+    # 6.3) Escreve cada arquivo
+    paths: list[str] = []
+    for fname, html in outputs.items():
+        fpath = os.path.join(outdir, fname)
+        with open(fpath, "w", encoding="utf-8") as f:
+            f.write(html)
+        paths.append(fpath)
+
+    # 6.4) Cria o ZIP se solicitado
+    if zipar:
+        zip_name = os.path.join(outdir, "statusinvest_html_6exemplos.zip")
+        with zipfile.ZipFile(zip_name, "w", zipfile.ZIP_DEFLATED) as z:
+            for p in paths:
+                z.write(p, arcname=os.path.basename(p))
+        paths.append(zip_name)
+
+    return paths
+
+
+# ==========================
+# 7) CLI (argumentos) / Main
+# ==========================
+
+def parse_args() -> argparse.Namespace:
+    """
+    Define e processa os argumentos de linha de comando.
+    """
+    ap = argparse.ArgumentParser(
+        description="Lê um Excel e gera 6 HTMLs autônomos com visualizações dos indicadores."
+    )
+    ap.add_argument("--input", "-i", required=True, help="Caminho para o arquivo Excel (.xlsx)")
+    ap.add_argument("--sheet", "-s", default=None,
+                    help="Nome da aba a ser lida (padrão: primeira aba). Ex.: 'IndiRentabilidade'")
+    ap.add_argument("--outdir", "-o", default="saida_html", help="Diretório de saída (padrão: ./saida_html)")
+    ap.add_argument("--no-zip", action="store_true", help="Não gerar o arquivo .zip (padrão: gera)")
+    return ap.parse_args()
+
+
+def main() -> int:
+    """
+    Função principal:
+      - lê argumentos
+      - carrega/normaliza DataFrame
+      - gera HTMLs e ZIP
+    """
+    args = parse_args()
+
+    # Validação de input
+    if not os.path.isfile(args.input):
+        print(f"[erro] Arquivo não encontrado: {args.input}", file=sys.stderr)
+        return 2
+
+    try:
+        df = carregar_planilha(args.input, sheet=args.sheet, verbose=True)
+    except Exception as e:
+        print(f"[erro] Falha ao ler/normalizar a planilha: {e}", file=sys.stderr)
+        return 3
+
+    try:
+        outputs = gravar_htmls(df, outdir=args.outdir, zipar=(not args.no_zip))
+    except Exception as e:
+        print(f"[erro] Falha ao gerar os HTMLs/ZIP: {e}", file=sys.stderr)
+        return 4
+
+    # Relatório final de saídas
+    print("Arquivos gerados:")
+    for p in outputs:
+        print(" -", p)
+
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

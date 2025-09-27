@@ -1,0 +1,361 @@
+
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <title>Indicadores Financeiros - ABEV3</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 40px;
+            background-color: #f9f9f9;
+        }
+        h1 {
+            text-align: center;
+            color: #333;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        th, td {
+            border: 1px solid #ccc;
+            padding: 10px;
+            text-align: left;
+            vertical-align: top;
+        }
+        th {
+            background-color: #004080;
+            color: white;
+        }
+        tr:nth-child(even) {
+            background-color: #f2f2f2;
+        }
+    </style>
+</head>
+<body>
+    <h1>Indicadores Financeiros - ABEV3</h1>
+    <table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th>Agrupador</th>
+      <th>Ativo</th>
+      <th>Indicador</th>
+      <th>Valor</th>
+      <th>Classificacao</th>
+      <th>Faixa</th>
+      <th>Descricao</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Rentabilidade</td>
+      <td>ABEV3</td>
+      <td>ROIC</td>
+      <td>1.873e-01</td>
+      <td>Ótimo</td>
+      <td>ROIC > 15%</td>
+      <td>O ROIC é extremamente alto, indicando rentabilidade excepcional sobre o capital investido. Essa faixa é típica de empresas com modelos de negócios escaláveis, baixa intensidade de capital ou eficiência superior, como software ou serviços especializados, refletindo forte retorno sobre o capital.</td>
+    </tr>
+    <tr>
+      <td>Valuation</td>
+      <td>ABEV3</td>
+      <td>P/Cap. Giro</td>
+      <td>4.986e+01</td>
+      <td>Ruim</td>
+      <td>P/Capital de Giro > 20</td>
+      <td>O P/Capital de Giro é extremamente elevado, sugerindo forte sobrevalorização ou expectativas irreais de liquidez operacional. Essa faixa é típica de bolhas de mercado, empresas de alto crescimento especulativo ou narrativas hype, onde o preço de mercado desconecta dos fundamentos financeiros.</td>
+    </tr>
+    <tr>
+      <td>Rentabilidade</td>
+      <td>ABEV3</td>
+      <td>D.Y</td>
+      <td>8.480e+00</td>
+      <td>Ótimo</td>
+      <td>Dividend Yield > 6%</td>
+      <td>O Dividend Yield é extremamente alto, indicando retorno excepcional via dividendos. Essa faixa é típica de empresas com forte geração de caixa e política agressiva de distribuição, como utilities ou REITs, mas pode também sinalizar empresas em declínio com preços deprimidos.</td>
+    </tr>
+    <tr>
+      <td>Saúde Financeira</td>
+      <td>ABEV3</td>
+      <td>P/L</td>
+      <td>1.325e+01</td>
+      <td>Ótimo</td>
+      <td>Patrimônio Líquido / Ativos > 0.6</td>
+      <td>O Patrimônio Líquido é extremamente alto em relação aos ativos, indicando baixa alavancagem e robustez financeira. Típico de empresas com forte geração de caixa ou baixa necessidade de capital, como software ou serviços especializados, refletindo solidez financeira.</td>
+    </tr>
+    <tr>
+      <td>Saúde Financeira</td>
+      <td>ABEV3</td>
+      <td>Disponibilidade</td>
+      <td>1.325e+01</td>
+      <td>Ótimo</td>
+      <td>Patrimônio Líquido / Ativos > 0.6</td>
+      <td>O Patrimônio Líquido é extremamente alto em relação aos ativos, indicando baixa alavancagem e robustez financeira. Típico de empresas com forte geração de caixa ou baixa necessidade de capital, como software ou serviços especializados, refletindo solidez financeira.</td>
+    </tr>
+    <tr>
+      <td>Eficiência Operacional</td>
+      <td>ABEV3</td>
+      <td>Giro ativos</td>
+      <td>6.500e-01</td>
+      <td>Moderado</td>
+      <td>0.5 < Giro do Ativo <= 1.0</td>
+      <td>O Giro do Ativo está em uma faixa moderada, indicando eficiência razoável na utilização dos ativos para gerar receita. Essa faixa é comum em empresas com operações estáveis, como manufatura ou varejo, mas com potencial limitado para maximizar o uso de ativos.</td>
+    </tr>
+    <tr>
+      <td>Eficiência Operacional</td>
+      <td>ABEV3</td>
+      <td>M. EBITDA</td>
+      <td>3.631e-01</td>
+      <td>Ótimo</td>
+      <td>Margem EBITDA > 30%</td>
+      <td>A Margem EBITDA é extremamente alta, indicando eficiência operacional excepcional e forte geração de caixa. Essa faixa é típica de empresas com marcas premium, baixa concorrência ou modelos de negócios escaláveis, como software, tecnologia ou bens de luxo, onde os lucros operacionais ajustados são robustos.</td>
+    </tr>
+    <tr>
+      <td>Valuation</td>
+      <td>ABEV3</td>
+      <td>EV/EBITDA</td>
+      <td>5.450e+00</td>
+      <td>Bom</td>
+      <td>4 < EV/EBITDA <= 8</td>
+      <td>O EV/EBITDA está em uma faixa equilibrada, sugerindo que a empresa tem um valuation razoável em relação ao seu lucro operacional ajustado. Essa faixa é comum em empresas estáveis com crescimento moderado e EBITDA consistente, refletindo confiança do mercado sem excesso de otimismo ou pessimismo.</td>
+    </tr>
+    <tr>
+      <td>Valuation</td>
+      <td>ABEV3</td>
+      <td>Ativo circulante</td>
+      <td>5.450e+00</td>
+      <td>Bom</td>
+      <td>4 < EV/EBITDA <= 8</td>
+      <td>O EV/EBITDA está em uma faixa equilibrada, sugerindo que a empresa tem um valuation razoável em relação ao seu lucro operacional ajustado. Essa faixa é comum em empresas estáveis com crescimento moderado e EBITDA consistente, refletindo confiança do mercado sem excesso de otimismo ou pessimismo.</td>
+    </tr>
+    <tr>
+      <td>Rentabilidade</td>
+      <td>ABEV3</td>
+      <td>ROE</td>
+      <td>1.595e-01</td>
+      <td>Bom</td>
+      <td>15 < ROE <= 25%</td>
+      <td>O ROE está em uma faixa alta, sugerindo boa rentabilidade sobre o patrimônio líquido. Essa faixa é comum em empresas com forte eficiência operacional, poder de precificação ou operações otimizadas, como tecnologia ou bens de consumo de marca, indicando capacidade de gerar retornos robustos.</td>
+    </tr>
+    <tr>
+      <td>Liquidez de Mercado</td>
+      <td>ABEV3</td>
+      <td>LIQUIDEZ MEDIA DIARIA</td>
+      <td>3.580e+08</td>
+      <td>Ótimo</td>
+      <td>Liquidez Média Diária > 2.000.000</td>
+      <td>A Liquidez Média Diária é extremamente alta, indicando facilidade excepcional para negociar a ação, mesmo em grandes volumes. Essa faixa é típica de empresas de alta capitalização, blue chips ou setores de grande interesse, como financeiro ou tecnologia, refletindo forte presença no mercado.</td>
+    </tr>
+    <tr>
+      <td>Valuation</td>
+      <td>ABEV3</td>
+      <td>P/EBITDA</td>
+      <td>5.880e+00</td>
+      <td>Ótimo</td>
+      <td>0 <= P/EBITDA <= 6</td>
+      <td>O P/EBITDA está muito baixo, sugerindo que a empresa está fortemente subvalorizada em relação à sua geração de caixa operacional ajustada. Essa faixa indica oportunidades de compra, comum em empresas com EBITDA sólido, mas preço de mercado deprimido devido a ciclos econômicos, baixa visibilidade ou setores menos atrativos.</td>
+    </tr>
+    <tr>
+      <td>Valuation</td>
+      <td>ABEV3</td>
+      <td>P/Ativo</td>
+      <td>1.370e+00</td>
+      <td>Moderado</td>
+      <td>1 < P/Ativo <= 1.5</td>
+      <td>O P/Ativo está moderadamente elevado, sugerindo que o mercado atribui um prêmio aos ativos da empresa. Essa faixa indica expectativas de rentabilidade acima da média ou crescimento futuro, comum em empresas com ativos intangíveis valiosos ou em setores com potencial moderado.</td>
+    </tr>
+    <tr>
+      <td>Liquidez</td>
+      <td>ABEV3</td>
+      <td>Liq. corrente</td>
+      <td>1.110e+00</td>
+      <td>Moderado</td>
+      <td>0.8 <= Liquidez Corrente < 1.2</td>
+      <td>A Liquidez Corrente está em uma faixa limitada, sugerindo que os ativos circulantes cobrem as obrigações de curto prazo de forma marginal. Essa faixa é comum em empresas com operações estáveis, mas com pouca folga financeira, como varejo ou manufatura com margens apertadas.</td>
+    </tr>
+    <tr>
+      <td>Liquidez</td>
+      <td>ABEV3</td>
+      <td>Free Float</td>
+      <td>NaN</td>
+      <td>Moderado</td>
+      <td>0.8 <= Liquidez Corrente < 1.2</td>
+      <td>A Liquidez Corrente está em uma faixa limitada, sugerindo que os ativos circulantes cobrem as obrigações de curto prazo de forma marginal. Essa faixa é comum em empresas com operações estáveis, mas com pouca folga financeira, como varejo ou manufatura com margens apertadas.</td>
+    </tr>
+    <tr>
+      <td>Liquidez</td>
+      <td>ABEV3</td>
+      <td>Ativos</td>
+      <td>1.110e+00</td>
+      <td>Moderado</td>
+      <td>0.8 <= Liquidez Corrente < 1.2</td>
+      <td>A Liquidez Corrente está em uma faixa limitada, sugerindo que os ativos circulantes cobrem as obrigações de curto prazo de forma marginal. Essa faixa é comum em empresas com operações estáveis, mas com pouca folga financeira, como varejo ou manufatura com margens apertadas.</td>
+    </tr>
+    <tr>
+      <td>Valuation</td>
+      <td>ABEV3</td>
+      <td>P/VP</td>
+      <td>2.110e+00</td>
+      <td>Ruim</td>
+      <td>1.8 < P/VP <= 2.5</td>
+      <td>O preço da ação está consideravelmente acima do valor patrimonial, indicando sobrevalorização moderada. Essa faixa é comum em empresas com expectativas de crescimento ou em setores de alto potencial, mas o preço já reflete otimismo significativo.</td>
+    </tr>
+    <tr>
+      <td>Valuation</td>
+      <td>ABEV3</td>
+      <td>EV/EBIT</td>
+      <td>7.880e+00</td>
+      <td>Bom</td>
+      <td>6 < EV/EBIT <= 10</td>
+      <td>O EV/EBIT está em uma faixa equilibrada, sugerindo que a empresa tem um valuation razoável em relação ao seu lucro operacional. Essa faixa é comum em empresas estáveis com crescimento moderado e EBIT consistente, refletindo confiança do mercado sem excesso de otimismo.</td>
+    </tr>
+    <tr>
+      <td>Governança Corporativa</td>
+      <td>ABEV3</td>
+      <td>TAG ALONG</td>
+      <td>8.000e-01</td>
+      <td>Moderado</td>
+      <td>80% <= Tag Along <= 99%</td>
+      <td>O Tag Along oferece proteção padrão aos minoritários, alinhado com exigências de mercados como o Novo Mercado da B3. Comum em empresas com governança sólida, sugere segurança razoável em cenários de venda de controle.</td>
+    </tr>
+    <tr>
+      <td>Eficiência Operacional</td>
+      <td>ABEV3</td>
+      <td>M. Bruta</td>
+      <td>5.150e-01</td>
+      <td>Bom</td>
+      <td>40 < Margem Bruta <= 60%</td>
+      <td>A Margem Bruta está em uma faixa alta, sugerindo boa eficiência operacional e controle de custos diretos. Essa faixa é comum em empresas com forte poder de precificação ou operações otimizadas, como tecnologia ou bens de consumo de marca.</td>
+    </tr>
+    <tr>
+      <td>Rentabilidade</td>
+      <td>ABEV3</td>
+      <td>M. Liquida</td>
+      <td>1.608e-01</td>
+      <td>Bom</td>
+      <td>15 < Margem Líquida <= 25%</td>
+      <td>A Margem Líquida está em uma faixa alta, sugerindo boa rentabilidade final e eficiência geral. Essa faixa é comum em empresas com forte poder de precificação, controle de custos ou operações otimizadas, como tecnologia, bens de consumo de marca ou serviços especializados.</td>
+    </tr>
+    <tr>
+      <td>Estrutura de Capital</td>
+      <td>ABEV3</td>
+      <td>PL/Ativos</td>
+      <td>6.500e-01</td>
+      <td>Ótimo</td>
+      <td>PL/Ativos > 0.6</td>
+      <td>O PL/Ativos é extremamente alto, indicando que a maior parte dos ativos é financiada por capital próprio, sugerindo baixa alavancagem e robustez financeira. Essa faixa é típica de empresas com forte geração de caixa ou baixa necessidade de capital, como software ou serviços especializados.</td>
+    </tr>
+    <tr>
+      <td>Solvência</td>
+      <td>ABEV3</td>
+      <td>Div. liquida/EBIT</td>
+      <td>-6.300e-01</td>
+      <td>Ótimo</td>
+      <td>Dívida Líquida / EBIT < 0</td>
+      <td>Um valor negativo pode indicar que a empresa possui mais caixa do que dívidas ou que o EBIT é negativo. Um excesso de caixa sugere uma posição financeira sólida, mas um EBIT negativo aponta para prejuízo operacional, exigindo análise cuidadosa do contexto.</td>
+    </tr>
+    <tr>
+      <td>Alavancagem</td>
+      <td>ABEV3</td>
+      <td>Divida liquida</td>
+      <td>-1.437e+10</td>
+      <td>Ótimo</td>
+      <td>Dívida Líquida < 0</td>
+      <td>Uma Dívida Líquida negativa indica que o caixa e equivalentes superam a dívida bruta, sugerindo robustez financeira. Comum em empresas com forte geração de caixa, como tecnologia ou serviços, isso reflete baixa alavancagem e alta capacidade de honrar obrigações.</td>
+    </tr>
+    <tr>
+      <td>Solvência</td>
+      <td>ABEV3</td>
+      <td>Div. liquida/PL</td>
+      <td>-1.600e-01</td>
+      <td>Ótimo</td>
+      <td>Dívida Líquida / PL < 0</td>
+      <td>Um valor negativo pode indicar que a empresa possui mais caixa do que dívidas ou que o patrimônio líquido é negativo. Um excesso de caixa sugere uma posição financeira sólida, mas um patrimônio líquido negativo aponta para prejuízos acumulados ou problemas estruturais, exigindo análise detalhada.</td>
+    </tr>
+    <tr>
+      <td>Eficiência Operacional</td>
+      <td>ABEV3</td>
+      <td>M. EBIT</td>
+      <td>2.506e-01</td>
+      <td>Ótimo</td>
+      <td>Margem EBIT > 25%</td>
+      <td>A Margem EBIT é extremamente alta, indicando eficiência operacional excepcional e forte poder de precificação. Essa faixa é típica de empresas com marcas premium, baixa concorrência ou modelos de negócios escaláveis, como software ou serviços especializados, onde os lucros operacionais são elevados.</td>
+    </tr>
+    <tr>
+      <td>Alavancagem</td>
+      <td>ABEV3</td>
+      <td>Divida bruta</td>
+      <td>3.158e+09</td>
+      <td>Crítico</td>
+      <td>Dívida Bruta / Ativos > 1.0</td>
+      <td>A Dívida Bruta excede os ativos totais, indicando alavancagem extrema e fragilidade financeira grave. Comum em empresas em crise ou com má gestão financeira, isso sugere risco elevado de insolvência e dificuldade em honrar obrigações financeiras.</td>
+    </tr>
+    <tr>
+      <td>Solvência</td>
+      <td>ABEV3</td>
+      <td>Div. liquida/EBITDA</td>
+      <td>-4.300e-01</td>
+      <td>Ótimo</td>
+      <td>Dívida Líquida / EBITDA < 0</td>
+      <td>Um valor negativo indica que a empresa possui mais caixa e equivalentes do que dívidas, sugerindo uma posição financeira sólida com baixa alavancagem. Isso pode ocorrer em empresas com alta geração de caixa ou reservas elevadas, permitindo investimentos ou distribuições aos acionistas.</td>
+    </tr>
+    <tr>
+      <td>Rentabilidade</td>
+      <td>ABEV3</td>
+      <td>ROA</td>
+      <td>1.038e-01</td>
+      <td>Bom</td>
+      <td>7 < ROA <= 12%</td>
+      <td>O ROA está em uma faixa alta, sugerindo boa rentabilidade na utilização dos ativos. Essa faixa é comum em empresas com eficiência operacional sólida, poder de precificação ou ativos bem geridos, como tecnologia ou bens de consumo, indicando capacidade de gerar retornos robustos.</td>
+    </tr>
+    <tr>
+      <td>Valuation</td>
+      <td>ABEV3</td>
+      <td>VPA</td>
+      <td>5.870e+00</td>
+      <td>Crítico</td>
+      <td>P/VPA > 2.5</td>
+      <td>O P/VPA é extremamente elevado, sugerindo forte sobrevalorização em relação ao valor patrimonial por ação. Essa faixa é típica de bolhas de mercado, empresas de alto crescimento especulativo ou narrativas hype, onde o preço da ação desconecta significativamente do patrimônio líquido.</td>
+    </tr>
+    <tr>
+      <td>Valuation</td>
+      <td>ABEV3</td>
+      <td>P/EBIT</td>
+      <td>8.500e+00</td>
+      <td>Bom</td>
+      <td>8 < P/EBIT <= 12</td>
+      <td>O P/EBIT está em uma faixa equilibrada, sugerindo que o valor de mercado está alinhado com o lucro operacional da empresa. Essa faixa é comum em empresas estáveis com EBIT consistente e crescimento moderado, refletindo confiança do mercado sem excesso de otimismo.</td>
+    </tr>
+    <tr>
+      <td>Valuation</td>
+      <td>ABEV3</td>
+      <td>P/Ativo Circ. Liq.</td>
+      <td>-1.930e+00</td>
+      <td>Crítico</td>
+      <td>P/Ativo Circulante Líquido < 0</td>
+      <td>Um P/Ativo Circulante Líquido negativo indica que o ativo circulante líquido é negativo, ou seja, o passivo circulante excede o ativo circulante. Isso sugere problemas graves de liquidez de curto prazo, comum em empresas em crise ou com má gestão financeira, indicando risco de insolvência.</td>
+    </tr>
+    <tr>
+      <td>Rentabilidade</td>
+      <td>ABEV3</td>
+      <td>LPA</td>
+      <td>9.400e-01</td>
+      <td>Ruim</td>
+      <td>0 <= LPA <= 1</td>
+      <td>O LPA está baixo, sugerindo rentabilidade limitada por ação. Isso pode ocorrer em empresas em fase inicial, com altos investimentos ou em setores de baixa margem.</td>
+    </tr>
+    <tr>
+      <td>Valuation</td>
+      <td>ABEV3</td>
+      <td>P/SR</td>
+      <td>2.130e+00</td>
+      <td>Ruim</td>
+      <td>2.0 < PSR <= 3.0</td>
+      <td>O PSR está consideravelmente elevado, indicando sobrevalorização em relação à receita líquida. Essa faixa é comum em empresas com altas expectativas de crescimento ou em setores premium, como tecnologia, mas o preço reflete otimismo significativo que pode ser arriscado se não sustentado.</td>
+    </tr>
+  </tbody>
+</table>
+</body>
+</html>

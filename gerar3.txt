@@ -1,0 +1,1509 @@
+python gerar_html_statusinvest_v2.py --input "StatusInvest_html.xlsx" --sheet "IndiRentabilidade" --outdir "saida_html"
+
+------------------
+
+
+# -*- coding: utf-8 -*-
+"""
+Arquivo: gerar_html_statusinvest_v2.py
+Autor:  M365 Copilot (para Silvio Luiz Puzzovio)
+
+Objetivo
+--------
+Ler o Excel 'StatusInvest_html.xlsx' e gerar **12** páginas HTML autossuficientes
+(sem depender de internet ou frameworks), todas usando locale pt-BR e exibindo
+as colunas do Excel (na própria tabela ou em blocos *KV*/details):
+
+    Agrupador, Fonte, Ativo, Indicador, Formula, Definição,
+    Referencia, Valor, Classificacao, Faixa, Descricao
+
+Modelos gerados
+---------------
+  1) Tabela responsiva (busca + ordenação)
+  2) Cards (todos os campos)
+  3) Lista com filtros (busca/agrupador/chips) + details com todos os campos
+  4) Comparativo com barras (min-max por Agrupador) + details com todos os campos
+  5) Catálogo com avatar (todos os campos)
+  6) Relatório & Resumo (gráficos CSS) + Tabela completa
+  7) Heatmap (Agrupador × Classificação) + Tabela completa expandível
+  8) Acordeão por Agrupador (cada seção = tabela completa)
+  9) Cards horizontais (todos os campos)
+ 10) Resumo executivo (Top por classificação) + Tabela completa
+ 11) Explorador de colunas (mostrar/ocultar via checkboxes)
+ 12) Tema claro / impressão (tabela completa com @media print)
+
+Uso
+---
+    pip install pandas openpyxl
+
+    python gerar_html_statusinvest_v2.py \
+        --input "StatusInvest_html.xlsx" \
+        --sheet "IndiRentabilidade" \
+        --outdir "saida_html" \
+        --zip-name "statusinvest_html_12exemplos.zip"
+
+Observações
+-----------
+- Percentuais são detectados por heurística (ex.: fórmula com '(%)' ou
+  indicador contendo ROE/ROA/ROIC/Margem/DY/Tag Along/Yield/Dividend) e
+  exibidos como Valor × 100 + '%'.
+- Formatação pt-BR: separador de milhar '.', decimal ','.
+"""
+
+from __future__ import annotations
+
+# =========================
+# 1) IMPORTS E DEPENDÊNCIAS
+# =========================
+import argparse                 # CLI
+import json                     # serialização para embutir nos <script>
+import math                     # isnan etc.
+import os                       # manipulação de caminho/pastas
+import re                       # limpeza numérica
+import zipfile                  # empacotar HTMLs em .zip
+from typing import Any, Dict, List
+
+import pandas as pd             # leitura Excel (engine openpyxl)
+
+
+# =======================================
+# 2) FUNÇÕES UTILITÁRIAS (formatação, etc)
+# =======================================
+def format_number_br(value: float | int | None, decimals: int = 2) -> str:
+    """
+    Formata número no padrão pt-BR (milhar '.', decimal ',').
+    None/NaN/Inf => '-'.
+    """
+    if value is None:
+        return '-'
+    if isinstance(value, float) and (math.isnan(value) or math.isinf(value)):
+        return '-'
+    try:
+        v = float(value)
+        s = f"{v:,.{decimals}f}"                      # 'en-US'
+        s = s.replace(',', 'X').replace('.', ',').replace('X', '.')  # vira 'pt-BR'
+        return s
+    except Exception:
+        return str(value)
+
+
+def only_numeric_sign(value: Any) -> float | None:
+    """
+    Extrai apenas dígitos, '-', '.' e converte para float.
+    Suporta vírgula decimal (converte para '.').
+    Retorna None se não converter.
+    """
+    if value is None:
+        return None
+    if isinstance(value, (int, float)):
+        return float(value)
+    txt = str(value).replace(',', '.')
+    txt = re.sub(r"[^0-9\.-]", "", txt)
+    if txt in ('', '-', '.'):
+        return None
+    try:
+        return float(txt)
+    except Exception:
+        return None
+
+
+def is_percentual(indicador: str, formula: str) -> bool:
+    """
+    Heurística simples para decidir se 'Valor' é percentual:
+    - fórmula contém '(%)' ou '* 100'
+    - indicador contém termos: roe, roa, roic, margem, 'm. ', dy, d.y, yield, tag along, dividend
+    """
+    indicador_lc = (indicador or '').lower()
+    formula_lc = (formula or '').lower()
+    if '(%)' in formula_lc or '* 100' in formula_lc:
+        return True
+    for k in ['roe', 'roa', 'roic', 'm. ', 'margem', 'dy', 'd.y', 'yield', 'tag along', 'dividend']:
+        if k in indicador_lc:
+            return True
+    return False
+
+
+def class_color(classe: str) -> str:
+    """
+    Cor HEX por classificação (fallback = cinza).
+    """
+    mapa = {
+        'ótimo': '#059669', 'otimo': '#059669',    # verde
+        'bom': '#2563eb',                          # azul
+        'moderado': '#f59e0b',                     # âmbar
+        'ruim': '#ef4444',                         # vermelho
+        'crítico': '#7f1d1d', 'critico': '#7f1d1d' # vinho
+    }
+    return mapa.get((classe or '').strip().lower(), '#6b7280')
+
+
+def safe_html(s: Any) -> str:
+    """
+    Escapa caracteres especiais para evitar quebra de markup.
+    """
+    if s is None:
+        return ''
+    return (str(s).replace('&', '&amp;').replace('<', '&lt;').replace('>', '&gt;')
+            .replace('"', '&quot;').replace("'", '&#39;'))
+
+
+# =====================================
+# 3) LEITURA / NORMALIZAÇÃO DO DATAFRAME
+# =====================================
+def carregar_df(caminho: str, sheet: str | int | None = None) -> pd.DataFrame:
+    """
+    Lê o Excel (primeira aba se sheet=None), normaliza nomes e tipos, e cria campos derivados.
+    - Remove linhas vazias e linhas sem 'Indicador'.
+    - Campos derivados:
+        Valor_num (float), EhPercentual (bool), Valor_fmt (str pt-BR), CorClass (str HEX).
+    """
+    # 3.1) ler planilha
+    sheet_arg = sheet if sheet is not None else 0
+    raw = pd.read_excel(caminho, sheet_name=sheet_arg, engine='openpyxl')
+    raw.columns = [c.strip() for c in raw.columns]
+
+    # 3.2) normalizar nomes
+    col_alias = {
+        'Agrupador': 'Agrupador', 'Fonte': 'Fonte', 'Ativo': 'Ativo',
+        'Indicador': 'Indicador',
+        'Formula': 'Formula', 'Fórmula': 'Formula',
+        'Definição': 'Definicao', 'Definicao': 'Definicao',
+        'Referencia': 'Referencia', 'Referência': 'Referencia',
+        'Valor': 'Valor',
+        'Classificacao': 'Classificacao', 'Classificação': 'Classificacao',
+        'Faixa': 'Faixa',
+        'Descricao': 'Descricao', 'Descrição': 'Descricao',
+    }
+    raw = raw.rename(columns={c: col_alias.get(c, c) for c in raw.columns})
+
+    # 3.3) garantir colunas esperadas
+    cols = ['Agrupador', 'Fonte', 'Ativo', 'Indicador', 'Formula', 'Definicao',
+            'Referencia', 'Valor', 'Classificacao', 'Faixa', 'Descricao']
+    for c in cols:
+        if c not in raw.columns:
+            raw[c] = None
+
+    # 3.4) limpar linhas vazias e sem indicador
+    raw.dropna(how='all', inplace=True)
+    raw = raw[~raw['Indicador'].isna()].copy()
+
+    # 3.5) converter valor e detectar percentual
+    raw['Valor_num'] = raw['Valor'].apply(only_numeric_sign)
+    raw['EhPercentual'] = raw.apply(
+        lambda r: is_percentual(str(r.get('Indicador', '')), str(r.get('Formula', ''))),
+        axis=1
+    )
+
+    # 3.6) formatar valor à exibição
+    def _fmt(row):
+        v = row.get('Valor_num')
+        if v is None or (isinstance(v, float) and math.isnan(v)):
+            return '-'
+        return f"{format_number_br(v*100, 2)}%" if row.get('EhPercentual') else format_number_br(v, 2)
+
+    raw['Valor_fmt'] = raw.apply(_fmt, axis=1)
+    raw['CorClass'] = raw['Classificacao'].apply(class_color)
+
+    return raw
+
+
+# ===================================
+# 4) SERIALIZAÇÃO PARA O FRONT (JSON)
+# ===================================
+def serializar(df: pd.DataFrame) -> tuple[str, str, str, str]:
+    """
+    Monta os JSONs a serem embutidos nas páginas:
+      DATA (linhas), CONT_CLASS (contagem por classificação),
+      CONT_AGRUP_CLASS (agrupador->classe->contagem), AGRUPADORES (lista).
+    """
+    # 4.1) Dados linha a linha
+    recs: List[Dict[str, Any]] = []
+    for _, r in df.iterrows():
+        recs.append({
+            'Agrupador': r.get('Agrupador', '') or '',
+            'Fonte': r.get('Fonte', '') or '',
+            'Ativo': r.get('Ativo', '') or '',
+            'Indicador': r.get('Indicador', '') or '',
+            'Formula': r.get('Formula', '') or '',
+            'Definicao': r.get('Definicao', '') or '',
+            'Referencia': r.get('Referencia', '') or '',
+            'Valor': None if pd.isna(r.get('Valor_num')) else float(r.get('Valor_num')),
+            'ValorFmt': r.get('Valor_fmt', '') or '',
+            'Classificacao': r.get('Classificacao', '') or '',
+            'Faixa': r.get('Faixa', '') or '',
+            'Descricao': r.get('Descricao', '') or '',
+            'EhPercentual': bool(r.get('EhPercentual', False)),
+            'CorClass': r.get('CorClass', '') or '',
+        })
+    data_json = json.dumps(recs, ensure_ascii=False)
+
+    # 4.2) Contagem por classificação
+    cont_class = df['Classificacao'].fillna('Sem classificação').value_counts().to_dict()
+    cont_class_json = json.dumps(cont_class, ensure_ascii=False)
+
+    # 4.3) Tabela Agrupador × Classificação
+    cont_ag = (df.groupby(['Agrupador', 'Classificacao']).size().unstack(fill_value=0)
+               if df.shape[0] else pd.DataFrame())
+    cont_ag_json = json.dumps(cont_ag.to_dict(orient='index') if not cont_ag.empty else {}, ensure_ascii=False)
+
+    # 4.4) Lista de agrupadores
+    grupos = sorted([a for a in df['Agrupador'].dropna().unique().tolist() if str(a).strip() != ''])
+    grupos_json = json.dumps(grupos, ensure_ascii=False)
+
+    return data_json, cont_class_json, cont_ag_json, grupos_json
+
+
+# ======================================
+# 5) CSS/JS BASE (tema escuro + utilit.)
+# ======================================
+BASE_CSS = r"""
+:root{--bg:#0b1020;--panel:#111827;--panel-2:#0f172a;--text:#e5e7eb;--muted:#94a3b8;--border:#1f2937;--accent:#38bdf8}
+*{box-sizing:border-box}html,body{height:100%}
+body{
+  margin:0; padding:24px;
+  font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,"Apple Color Emoji","Segoe UI Emoji";
+  background:linear-gradient(180deg,#050814,#0b1020 30%,#0b1020 100%); color:var(--text);
+}
+.container{max-width:1200px;margin:0 auto}
+.header{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px}
+.h1{font-size:24px;font-weight:700}
+.badge{display:inline-flex;gap:8px;padding:4px 10px;border-radius:999px;background:#0b1224;color:var(--muted);border:1px solid var(--border);font-size:12px}
+.card{background:var(--panel);border:1px solid var(--border);border-radius:12px;padding:16px}
+.grid{display:grid;grid-template-columns:repeat(12,1fr);gap:16px}
+.mono{font-family:ui-monospace,Menlo,Consolas,monospace}
+hr{border:0;border-top:1px solid var(--border);margin:16px 0}
+small{color:var(--muted)}
+input,select{background:#0c1428;color:var(--text);border:1px solid var(--border);border-radius:8px;padding:10px;outline:none}
+.table{width:100%;border-collapse:separate;border-spacing:0}
+.table th, .table td{padding:10px 12px;border-bottom:1px solid var(--border)}
+.table thead th{position:sticky;top:0;background:var(--panel-2);text-align:left;font-weight:600}
+.table tbody tr:hover{background:#0c1428}
+.kv{display:grid;grid-template-columns:160px 1fr;gap:8px}
+.chip{display:inline-block;padding:4px 8px;border-radius:999px;font-size:12px;border:1px solid var(--border);color:var(--muted)}
+.bar{height:10px;background:#0c1428;border:1px solid var(--border);border-radius:999px;overflow:hidden}
+.bar > span{display:block;height:100%}
+.footer{margin-top:24px;color:var(--muted);font-size:12px}
+a{color:#38bdf8}
+"""
+
+BASE_JS_UTIL = r"""
+// hash determinístico para gerar cores/avatares
+function hashCode(str){ let h=0; for(let i=0;i<(str||'').length;i++){ h=((h<<5)-h)+str.charCodeAt(i); h|=0; } return h; }
+// cor HSL estável a partir do texto
+function stableColor(text){ const h=Math.abs(hashCode(text||''))%360; return `hsl(${h} 70% 45%)`; }
+// trunca com reticências
+function truncate(t,n){ return (t||'').length>n ? (t.substring(0,n-1)+'…') : (t||''); }
+"""
+
+
+# ==========================================
+# 6) ENVOLTÓRIO HTML (injeta CSS/JS + JSON)
+# ==========================================
+def boilerplate_html(title: str,
+                     body_inner: str,
+                     data_json: str, cont_class_json: str, cont_ag_json: str, grupos_json: str,
+                     extra_head: str = '', extra_js: str = '') -> str:
+    """
+    Template comum: injeta CSS/JS base e os JSONs (DATA, contagens, grupos).
+    """
+    return f"""<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>{safe_html(title)}</title>
+  <style>{BASE_CSS}</style>
+  {extra_head}
+</head>
+<body>
+  <div class="container">
+    {body_inner}
+    <div class="footer">Gerado automaticamente – {safe_html(title)}</div>
+  </div>
+  <script>
+    const DATA = {data_json};
+    const CONT_CLASS = {cont_class_json};
+    const CONT_AGRUP_CLASS = {cont_ag_json};
+    const AGRUPADORES = {grupos_json};
+    {BASE_JS_UTIL}
+  </script>
+  <script>
+  {extra_js}
+  </script>
+</body>
+</html>"""
+
+
+# ===================================================
+# 7) BUILDERS DOS 12 MODELOS (cada um retorna string)
+# ===================================================
+
+# ------- (1) Tabela responsiva (todas as colunas) -------
+def build_ex1(data_json, cont_class_json, cont_ag_json, grupos_json) -> str:
+    head = """
+    <div class="header">
+      <div class="h1">Ex1 – Tabela Responsiva (todas as colunas)</div>
+      <div class="badge">Total: <span id="total" class="mono"></span></div>
+    </div>
+    <div class="card">
+      <div style="display:flex; gap:12px; margin-bottom:12px">
+        <input id="busca" placeholder="Buscar em qualquer campo…" style="flex:1"/>
+        <select id="selClass"><option value="">Todas as classificações</option></select>
+      </div>
+      <div style="overflow:auto; max-height:70vh">
+        <table class="table" id="tbl">
+          <thead><tr>
+            <th data-k="Agrupador">Agrupador</th><th data-k="Fonte">Fonte</th><th data-k="Ativo">Ativo</th>
+            <th data-k="Indicador">Indicador</th><th data-k="Formula">Fórmula</th><th data-k="Definicao">Definição</th>
+            <th data-k="Referencia">Referência</th><th data-k="ValorFmt">Valor</th><th data-k="Classificacao">Classificação</th>
+            <th data-k="Faixa">Faixa</th><th data-k="Descricao">Descrição</th>
+          </tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </div>
+    """
+    js = r"""
+    // preencher seletor de classes
+    const sel = document.getElementById('selClass');
+    [...new Set(DATA.map(d=>d.Classificacao).filter(Boolean))].sort()
+      .forEach(c=>{ const o=document.createElement('option'); o.value=c; o.textContent=c; sel.appendChild(o); });
+
+    const tbody = document.querySelector('#tbl tbody');
+    const total = document.getElementById('total');
+    const busca = document.getElementById('busca');
+
+    function render(){
+      const q = (busca.value||'').toLowerCase();
+      const csel = sel.value||'';
+      const rows = DATA.filter(d=>{
+        const txt = `${d.Agrupador} ${d.Fonte} ${d.Ativo} ${d.Indicador} ${d.Formula} ${d.Definicao} ${d.Referencia} ${d.ValorFmt} ${d.Classificacao} ${d.Faixa} ${d.Descricao}`.toLowerCase();
+        const okTxt = !q || txt.includes(q);
+        const okCls = !csel || d.Classificacao===csel;
+        return okTxt && okCls;
+      });
+      tbody.innerHTML='';
+      for(const d of rows){
+        const tr=document.createElement('tr');
+        tr.innerHTML = `
+          <td>${d.Agrupador||''}</td><td>${d.Fonte||''}</td><td>${d.Ativo||''}</td>
+          <td>${d.Indicador||''}</td>
+          <td><small class="mono">${(d.Formula||'').replaceAll('<','&lt;')}</small></td>
+          <td>${truncate(d.Definicao,140)}</td>
+          <td>${d.Referencia||''}</td>
+          <td><strong>${d.ValorFmt||'-'}</strong></td>
+          <td><span class="chip" style="border-color:${d.CorClass}; color:${d.CorClass}">${d.Classificacao||''}</span></td>
+          <td>${d.Faixa||''}</td>
+          <td>${truncate(d.Descricao,200)}</td>`;
+        tbody.appendChild(tr);
+      }
+      total.textContent = rows.length;
+    }
+
+    // ordenação simples por coluna
+    document.querySelectorAll('#tbl thead th').forEach(th=>{
+      th.style.cursor='pointer';
+      th.addEventListener('click', ()=>{
+        const key=th.dataset.k; const asc = th.dataset.asc !== 'true';
+        DATA.sort((a,b)=> (a[key]||'').toString().localeCompare((b[key]||'').toString(),'pt-BR',{numeric:true})*(asc?1:-1));
+        th.dataset.asc = asc;
+        render();
+      });
+    });
+
+    busca.addEventListener('input', render);
+    sel.addEventListener('change', render);
+    render();
+    """
+    return boilerplate_html('Ex1 – Tabela Responsiva (todas as colunas)', head,
+                            data_json, cont_class_json, cont_ag_json, grupos_json, '', js)
+
+
+# ------- (2) Cards (todos os campos) -------
+def build_ex2(data_json, cont_class_json, cont_ag_json, grupos_json) -> str:
+    head = """
+    <div class="header"><div class="h1">Ex2 – Cards (todos os campos)</div>
+    <div class="badge">Total: <span id="total" class="mono"></span></div></div>
+    <div class="grid" style="grid-template-columns:repeat(auto-fill,minmax(320px,1fr));" id="cards"></div>
+    """
+    js = r"""
+    const wrap = document.getElementById('cards');
+    const total = document.getElementById('total');
+    wrap.innerHTML='';
+    for(const d of DATA){
+      const bd = d.CorClass || '#6b7280';
+      const el = document.createElement('div'); el.className='card'; el.style.borderColor=bd;
+      el.innerHTML = `
+        <div style="display:flex; justify-content:space-between; align-items:center">
+          <h3 style="margin:0">${d.Indicador||''}</h3>
+          <span class="chip" style="border-color:${bd}; color:${bd}">${d.Classificacao||''}</span>
+        </div>
+        <div style="margin:8px 0 12px" class="mono">Valor: <strong>${d.ValorFmt||'-'}</strong></div>
+        <div class="kv">
+          <div>Agrupador</div><div>${d.Agrupador||''}</div>
+          <div>Fonte</div><div>${d.Fonte||''}</div>
+          <div>Ativo</div><div>${d.Ativo||''}</div>
+          <div>Fórmula</div><div><small class="mono">${(d.Formula||'').replaceAll('<','&lt;')}</small></div>
+          <div>Definição</div><div>${(d.Definicao||'')}</div>
+          <div>Referência</div><div>${d.Referencia||''}</div>
+          <div>Faixa</div><div>${d.Faixa||''}</div>
+          <div>Descrição</div><div>${d.Descricao||''}</div>
+        </div>`;
+      wrap.appendChild(el);
+    }
+    total.textContent = DATA.length;
+    """
+    return boilerplate_html('Ex2 – Cards (todos os campos)', head,
+                            data_json, cont_class_json, cont_ag_json, grupos_json, '', js)
+
+
+# ------- (3) Lista + filtros + details -------
+def build_ex3(data_json, cont_class_json, cont_ag_json, grupos_json) -> str:
+    head = """
+    <div class="header"><div class="h1">Ex3 – Lista com Filtros (todos os campos)</div>
+    <div class="badge">Agrupadores: <span id="nagr" class="mono"></span></div></div>
+    <div class="card">
+      <div class="grid" style="grid-template-columns:1fr 200px; align-items:center">
+        <input id="q" placeholder="Buscar…"/>
+        <select id="g"><option value="">Todos os agrupadores</option></select>
+      </div>
+      <div style="margin:12px 0; display:flex; gap:8px; flex-wrap:wrap" id="chips"></div>
+      <hr/>
+      <div id="list"></div>
+    </div>
+    """
+    js = r"""
+    const q=document.getElementById('q'); const g=document.getElementById('g');
+    const list=document.getElementById('list'); const chips=document.getElementById('chips');
+    const nagr=document.getElementById('nagr');
+
+    // popular agrupadores
+    AGRUPADORES.forEach(a=>{const o=document.createElement('option'); o.value=a; o.textContent=a; g.appendChild(o);});
+    nagr.textContent = AGRUPADORES.length;
+
+    // chips por classificação
+    const classes=[...new Set(DATA.map(d=>d.Classificacao).filter(Boolean))];
+    let classActive = new Set();
+    for(const c of classes){
+      const s=document.createElement('span'); s.className='chip'; s.style.borderColor='#1f2937';
+      s.style.cursor='pointer'; s.textContent=c;
+      s.onclick=()=>{ if(classActive.has(c)){classActive.delete(c); s.style.color=''; s.style.borderColor='#1f2937';}
+                      else {classActive.add(c); s.style.color='#38bdf8'; s.style.borderColor='#38bdf8';}
+                      render(); };
+      chips.appendChild(s);
+    }
+
+    function render(){
+      const term=(q.value||'').toLowerCase(); const ag=g.value||'';
+      const rows=DATA.filter(d=>{
+        const okText=!term||(`${d.Agrupador} ${d.Fonte} ${d.Ativo} ${d.Indicador} ${d.Formula} ${d.Definicao} ${d.Referencia} ${d.ValorFmt} ${d.Classificacao} ${d.Faixa} ${d.Descricao}`.toLowerCase().includes(term));
+        const okAgr=!ag||d.Agrupador===ag; const okClass=classActive.size===0||classActive.has(d.Classificacao);
+        return okText && okAgr && okClass;
+      });
+      list.innerHTML='';
+      for(const d of rows){
+        const div=document.createElement('div'); div.className='card'; div.style.marginBottom='10px';
+        div.innerHTML=`
+          <div style="display:flex; gap:12px; align-items:center">
+            <div style="width:44px; height:44px; border-radius:50%; background:${stableColor(d.Indicador||'?')}; display:flex; align-items:center; justify-content:center; font-weight:700">
+              ${(d.Indicador||'?').slice(0,2).toUpperCase()}
+            </div>
+            <div style="flex:1">
+              <div style="display:flex; justify-content:space-between; align-items:center">
+                <strong>${d.Indicador||''}</strong>
+                <span class="chip" style="border-color:${d.CorClass}; color:${d.CorClass}">${d.Classificacao||''}</span>
+              </div>
+              <div><small>${d.Agrupador||''} • Valor: <strong>${d.ValorFmt||'-'}</strong> • Faixa: ${d.Faixa||'-'}</small></div>
+            </div>
+          </div>
+          <details style="margin-top:8px"><summary style="cursor:pointer; color:#38bdf8">Ver todos os campos</summary>
+            <div class="kv" style="margin-top:8px">
+              <div>Agrupador</div><div>${d.Agrupador||''}</div>
+              <div>Fonte</div><div>${d.Fonte||''}</div>
+              <div>Ativo</div><div>${d.Ativo||''}</div>
+              <div>Fórmula</div><div><small class="mono">${(d.Formula||'').replaceAll('<','&lt;')}</small></div>
+              <div>Definição</div><div>${d.Definicao||''}</div>
+              <div>Referência</div><div>${d.Referencia||''}</div>
+              <div>Descrição</div><div>${d.Descricao||''}</div>
+            </div>
+          </details>`;
+        list.appendChild(div);
+      }
+    }
+    q.addEventListener('input', render); g.addEventListener('change', render); render();
+    """
+    return boilerplate_html('Ex3 – Lista com Filtros (todos os campos)', head,
+                            data_json, cont_class_json, cont_ag_json, grupos_json, '', js)
+
+
+# ------- (4) Barras (por agrupador) + details -------
+def build_ex4(data_json, cont_class_json, cont_ag_json, grupos_json, df: pd.DataFrame) -> str:
+    # pré-computa normalização min-max dentro de cada Agrupador
+    norm_rows = []
+    if df.shape[0] > 0:
+        for ag, g in df.groupby('Agrupador'):
+            vals = g['Valor_num'].astype(float)
+            mn, mx = vals.min(), vals.max()
+            rng = (mx - mn) if pd.notna(mx) and pd.notna(mn) else None
+            for _, r in g.iterrows():
+                v = r['Valor_num']
+                norm = (float(v)-float(mn))/float(rng)*100.0 if (rng and rng != 0 and pd.notna(v)) else 50.0
+                norm_rows.append({
+                    'Agrupador': r.get('Agrupador','') or '',
+                    'Fonte': r.get('Fonte','') or '',
+                    'Ativo': r.get('Ativo','') or '',
+                    'Indicador': r.get('Indicador','') or '',
+                    'Formula': r.get('Formula','') or '',
+                    'Definicao': r.get('Definicao','') or '',
+                    'Referencia': r.get('Referencia','') or '',
+                    'ValorFmt': r.get('Valor_fmt','') or '',
+                    'Classificacao': r.get('Classificacao','') or '',
+                    'Faixa': r.get('Faixa','') or '',
+                    'Descricao': r.get('Descricao','') or '',
+                    'CorClass': r.get('CorClass','') or '',
+                    'Norm': norm
+                })
+    NORM_JSON = json.dumps(norm_rows, ensure_ascii=False)
+
+    head = """
+    <div class="header"><div class="h1">Ex4 – Comparativo com Barras (todos os campos)</div>
+    <div class="badge">Normalização min–max por Agrupador</div></div>
+    <div id="wrap"></div>
+    """
+    js = f"""
+    const NORM = {NORM_JSON};
+    const byAg = NORM.reduce((acc,r)=>{{ (acc[r.Agrupador] ||= []).push(r); return acc; }},{{}});
+    const wrap = document.getElementById('wrap');
+    for(const ag of Object.keys(byAg).sort()){{
+      const sec = document.createElement('div'); sec.className='card'; sec.style.marginBottom='12px';
+      sec.innerHTML = `<h3 style="margin-top:0">${{ag}}</h3>`;
+      for(const r of byAg[ag]){{
+        const row = document.createElement('div'); row.style.margin='10px 0';
+        row.innerHTML = `
+          <div style="display:flex; justify-content:space-between; align-items:center; gap:12px">
+            <div style="flex:1"><strong>${{r.Indicador}}</strong> <small class="mono" style="color:var(--muted)">${{r.ValorFmt}}</small></div>
+            <div class="bar" style="flex:3"><span style="width:${{r.Norm.toFixed(1)}}%; background:${{r.CorClass||'#38bdf8'}}"></span></div>
+            <div style="width:140px; text-align:right"><span class="chip" style="border-color:${{r.CorClass}}; color:${{r.CorClass}}">${{r.Classificacao}}</span></div>
+          </div>
+          <details style="margin-top:6px"><summary style="cursor:pointer; color:#38bdf8">Ver todos os campos</summary>
+            <div class="kv" style="margin-top:8px">
+              <div>Agrupador</div><div>${{r.Agrupador||''}}</div>
+              <div>Fonte</div><div>${{r.Fonte||''}}</div>
+              <div>Ativo</div><div>${{r.Ativo||''}}</div>
+              <div>Fórmula</div><div><small class="mono">${{(r.Formula||'').replaceAll('<','&lt;')}}</small></div>
+              <div>Definição</div><div>${{r.Definicao||''}}</div>
+              <div>Referência</div><div>${{r.Referencia||''}}</div>
+              <div>Faixa</div><div>${{r.Faixa||''}}</div>
+              <div>Descrição</div><div>${{r.Descricao||''}}</div>
+            </div>
+          </details>`;
+        sec.appendChild(row);
+      }}
+      wrap.appendChild(sec);
+    }}
+    """
+    return boilerplate_html('Ex4 – Comparativo Barras (todos os campos)', head,
+                            data_json, cont_class_json, cont_ag_json, grupos_json, '', js)
+
+
+# ------- (5) Catálogo com avatar (todos os campos) -------
+def build_ex5(data_json, cont_class_json, cont_ag_json, grupos_json) -> str:
+    head = """
+    <div class="header"><div class="h1">Ex5 – Catálogo (todos os campos)</div>
+    <div class="badge">Avatares por Indicador</div></div>
+    <div class="grid" style="grid-template-columns:repeat(auto-fill,minmax(320px,1fr));" id="grid"></div>
+    """
+    js = r"""
+    const grid=document.getElementById('grid');
+    for(const d of DATA){
+      const card=document.createElement('div'); card.className='card';
+      card.innerHTML=`
+        <div style="display:flex; gap:10px">
+          <div style="width:54px; height:54px; border-radius:12px; background:${stableColor(d.Indicador||'?')}; display:flex; align-items:center; justify-content:center; font-weight:800; font-size:18px">
+            ${(d.Indicador||'?').slice(0,2).toUpperCase()}
+          </div>
+          <div style="flex:1">
+            <div style="display:flex; justify-content:space-between; align-items:center">
+              <strong>${d.Indicador||''}</strong>
+              <span class="chip" style="border-color:${d.CorClass}; color:${d.CorClass}">${d.Classificacao||''}</span>
+            </div>
+            <div class="mono" style="margin-top:4px">Valor: <strong>${d.ValorFmt||'-'}</strong></div>
+          </div>
+        </div>
+        <div class="kv" style="margin-top:10px">
+          <div>Agrupador</div><div>${d.Agrupador||''}</div>
+          <div>Fonte</div><div>${d.Fonte||''}</div>
+          <div>Ativo</div><div>${d.Ativo||''}</div>
+          <div>Fórmula</div><div><small class="mono">${(d.Formula||'').replaceAll('<','&lt;')}</small></div>
+          <div>Definição</div><div>${d.Definicao||''}</div>
+          <div>Referência</div><div>${d.Referencia||''}</div>
+          <div>Faixa</div><div>${d.Faixa||''}</div>
+          <div>Descrição</div><div>${d.Descricao||''}</div>
+        </div>`;
+      grid.appendChild(card);
+    }
+    """
+    return boilerplate_html('Ex5 – Catálogo (todos os campos)', head,
+                            data_json, cont_class_json, cont_ag_json, grupos_json, '', js)
+
+
+# ------- (6) Relatório & Resumo + Tabela completa -------
+def build_ex6(data_json, cont_class_json, cont_ag_json, grupos_json, df: pd.DataFrame) -> str:
+    total_linhas = df.shape[0]
+    total_ag = len(sorted([a for a in df['Agrupador'].dropna().unique().tolist() if str(a).strip()!='']))
+    total_classes = len([c for c in set(df['Classificacao'].dropna().tolist()) if str(c).strip()!=''])
+
+    head = f"""
+    <div class="header"><div class="h1">Ex6 – Relatório & Resumo</div>
+    <div class="badge">{total_linhas} linhas • {total_ag} agrupadores • {total_classes} classificações</div></div>
+    <div class="grid">
+      <div class="card" style="grid-column: span 6"><h3>Distribuição por Classificação</h3><div id="chartClass"></div></div>
+      <div class="card" style="grid-column: span 6"><h3>Classificação por Agrupador</h3><div id="chartAg"></div></div>
+    </div>
+    <div class="card" style="margin-top:12px">
+      <h3 style="margin-top:0">Tabela completa (todas as colunas)</h3>
+      <div style="overflow:auto; max-height:50vh">
+        <table class="table" id="full">
+          <thead><tr>
+            <th>Agrupador</th><th>Fonte</th><th>Ativo</th><th>Indicador</th>
+            <th>Fórmula</th><th>Definição</th><th>Referência</th><th>Valor</th>
+            <th>Classificação</th><th>Faixa</th><th>Descrição</th>
+          </tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </div>
+    """
+    js = r"""
+    // Chart 1
+    const cc=document.getElementById('chartClass');
+    const entries=Object.entries(CONT_CLASS).sort((a,b)=>b[1]-a[1]);
+    for(const [cls,qt] of entries){
+      const color = DATA.find(d=>d.Classificacao===cls)?.CorClass || '#38bdf8';
+      const row=document.createElement('div'); row.style.margin='8px 0';
+      row.innerHTML=`<div style="display:flex; align-items:center; gap:10px">
+        <div style="width:160px">${cls}</div>
+        <div class="bar" style="flex:1"><span style="width:${(qt/Math.max(1,entries[0][1])*100).toFixed(1)}%; background:${color}"></span></div>
+        <div style="width:60px; text-align:right" class="mono">${qt}</div>
+      </div>`; cc.appendChild(row);
+    }
+    // Chart 2
+    const cag=document.getElementById('chartAg'); const ags=Object.keys(CONT_AGRUP_CLASS).sort();
+    for(const ag of ags){
+      const classes=CONT_AGRUP_CLASS[ag]; const total=Object.values(classes).reduce((a,b)=>a+b,0);
+      const row=document.createElement('div'); row.style.margin='8px 0';
+      const bar=document.createElement('div'); bar.className='bar'; bar.style.display='flex';
+      for(const [cls,qt] of Object.entries(classes)){
+        const color = DATA.find(d=>d.Classificacao===cls)?.CorClass || '#0ea5e9';
+        const seg=document.createElement('span'); seg.style.width=(qt/Math.max(1,total)*100)+'%'; seg.style.background=color; bar.appendChild(seg);
+      }
+      row.innerHTML=`<div style="display:flex; align-items:center; gap:10px">
+        <div style="width:220px">${ag}</div><div style="flex:1"></div><div style="width:60px; text-align:right" class="mono">${total}</div>
+      </div>`;
+      row.children[0].appendChild(bar); cag.appendChild(row);
+    }
+    // Tabela completa
+    const tbody=document.querySelector('#full tbody');
+    for(const d of DATA){
+      const tr=document.createElement('tr');
+      tr.innerHTML=`
+        <td>${d.Agrupador||''}</td><td>${d.Fonte||''}</td><td>${d.Ativo||''}</td><td>${d.Indicador||''}</td>
+        <td><small class="mono">${(d.Formula||'').replaceAll('<','&lt;')}</small></td>
+        <td>${truncate(d.Definicao,160)}</td><td>${d.Referencia||''}</td>
+        <td><strong>${d.ValorFmt||'-'}</strong></td>
+        <td><span class="chip" style="border-color:${d.CorClass}; color:${d.CorClass}">${d.Classificacao||''}</span></td>
+        <td>${d.Faixa||''}</td><td>${truncate(d.Descricao,200)}</td>`;
+      tbody.appendChild(tr);
+    }
+    """
+    return boilerplate_html('Ex6 – Relatório & Tabela completa', head,
+                            data_json, cont_class_json, cont_ag_json, grupos_json, '', js)
+
+
+# ------- (7) Heatmap + Tabela completa expandível -------
+def build_ex7(data_json, cont_class_json, cont_ag_json, grupos_json, df: pd.DataFrame) -> str:
+    piv = df.pivot_table(index='Agrupador', columns='Classificacao', values='Indicador',
+                         agg
+
+
+==========================   # -*- coding: utf-8 -*-
+"""
+Geração de 12 HTMLs a partir do Excel 'StatusInvest_html.xlsx'.
+Inclui os 6 modelos anteriores (com todas as colunas presentes) + 6 novos modelos:
+  7) Heatmap Agrupador x Classificação
+  8) Acordeão por Agrupador (tabelas por seção)
+  9) Cards horizontais (todos os campos)
+ 10) Resumo executivo (Top por classificação + tabela completa)
+ 11) Explorador de colunas (mostrar/ocultar colunas)
+ 12) Versão clara para impressão (tabela completa com @media print)
+
+Dependências:
+    pip install pandas openpyxl
+
+Uso:
+    python gerar_html_statusinvest_v2.py
+Cria 12 arquivos .html e o ZIP 'statusinvest_html_12exemplos.zip'.
+"""
+from __future__ import annotations
+
+# ======================= IMPORTS =======================
+import json, math, os, re, zipfile
+from typing import Any, Dict, List
+import pandas as pd
+
+# ======================= UTILITÁRIOS =======================
+def format_number_br(value: float | int | None, decimals: int = 2) -> str:
+    """Formata número no padrão pt-BR (milhar '.' e decimal ',')."""
+    if value is None:
+        return '-'
+    if isinstance(value, float) and (math.isnan(value) or math.isinf(value)):
+        return '-'
+    try:
+        v = float(value)
+        s = f"{v:,.{decimals}f}"               # en-US: 1,234.56
+        s = s.replace(',', 'X').replace('.', ',').replace('X', '.')  # pt-BR: 1.234,56
+        return s
+    except Exception:
+        return str(value)
+
+def only_numeric_sign(value: Any) -> float | None:
+    """Extrai apenas dígitos, '-' e '.' e converte em float. Aceita vírgula decimal."""
+    if value is None:
+        return None
+    if isinstance(value, (int, float)):
+        return float(value)
+    txt = str(value).replace(',', '.')
+    txt = re.sub(r"[^0-9\.-]", "", txt)
+    if txt in ('', '-', '.'):
+        return None
+    try:
+        return float(txt)
+    except Exception:
+        return None
+
+def is_percentual(indicador: str, formula: str) -> bool:
+    """Heurística: detecta se o Valor é percentual (exibir v*100%)."""
+    indicador_lc = (indicador or '').lower()
+    formula_lc = (formula or '').lower()
+    if '(%)' in formula_lc or '* 100' in formula_lc:
+        return True
+    for k in ['roe','roa','roic','m. ','margem','dy','d.y','yield','tag along','dividend']:
+        if k in indicador_lc:
+            return True
+    return False
+
+def class_color(classe: str) -> str:
+    """Cores para Classificação (fallback cinza)."""
+    mapa = {
+        'ótimo':'#059669','otimo':'#059669',
+        'bom':'#2563eb',
+        'moderado':'#f59e0b',
+        'ruim':'#ef4444',
+        'crítico':'#7f1d1d','critico':'#7f1d1d'
+    }
+    return mapa.get((classe or '').strip().lower(), '#6b7280')
+
+def safe_html(s: Any) -> str:
+    """Escapa caracteres especiais para não quebrar HTML."""
+    if s is None:
+        return ''
+    return (str(s).replace('&','&amp;').replace('<','&lt;').replace('>','&gt;')
+            .replace('"','&quot;').replace("'",'&#39;'))
+
+# ======================= LEITURA DO EXCEL =======================
+excel_path = 'StatusInvest_html.xlsx'  # mesmo diretório do script
+raw = pd.read_excel(excel_path, sheet_name=0, engine='openpyxl')  # primeira aba
+raw.columns = [c.strip() for c in raw.columns]
+
+# Normaliza nomes de colunas (variações/acentos)
+col_alias = {
+    'Agrupador':'Agrupador','Fonte':'Fonte','Ativo':'Ativo','Indicador':'Indicador',
+    'Formula':'Formula','Fórmula':'Formula','Definição':'Definicao','Definicao':'Definicao',
+    'Referencia':'Referencia','Referência':'Referencia','Valor':'Valor',
+    'Classificacao':'Classificacao','Classificação':'Classificacao','Faixa':'Faixa',
+    'Descricao':'Descricao','Descrição':'Descricao'
+}
+raw = raw.rename(columns={c: col_alias.get(c,c) for c in raw.columns})
+
+# Garante todas as colunas pedidas
+cols = ['Agrupador','Fonte','Ativo','Indicador','Formula','Definicao','Referencia','Valor','Classificacao','Faixa','Descricao']
+for c in cols:
+    if c not in raw.columns:
+        raw[c] = None
+
+# Limpa linhas vazias e sem Indicador
+raw.dropna(how='all', inplace=True)
+raw = raw[~raw['Indicador'].isna()].copy()
+
+# Conversões/derivados
+raw['Valor_num'] = raw['Valor'].apply(only_numeric_sign)
+raw['EhPercentual'] = raw.apply(lambda r: is_percentual(str(r.get('Indicador','')), str(r.get('Formula',''))), axis=1)
+
+def fmt_val(row):
+    v = row.get('Valor_num')
+    if v is None or (isinstance(v,float) and math.isnan(v)):
+        return '-'
+    return f"{format_number_br(v*100,2)}%" if row.get('EhPercentual') else format_number_br(v,2)
+
+raw['Valor_fmt'] = raw.apply(fmt_val, axis=1)
+raw['CorClass'] = raw['Classificacao'].apply(class_color)
+
+# ======================= SERIALIZAÇÃO PARA O FRONT =======================
+records: List[Dict[str,Any]] = []
+for _, r in raw.iterrows():
+    records.append({
+        'Agrupador': r.get('Agrupador','') or '',
+        'Fonte': r.get('Fonte','') or '',
+        'Ativo': r.get('Ativo','') or '',
+        'Indicador': r.get('Indicador','') or '',
+        'Formula': r.get('Formula','') or '',
+        'Definicao': r.get('Definicao','') or '',
+        'Referencia': r.get('Referencia','') or '',
+        'Valor': None if pd.isna(r.get('Valor_num')) else float(r.get('Valor_num')),
+        'ValorFmt': r.get('Valor_fmt','') or '',
+        'Classificacao': r.get('Classificacao','') or '',
+        'Faixa': r.get('Faixa','') or '',
+        'Descricao': r.get('Descricao','') or '',
+        'EhPercentual': bool(r.get('EhPercentual', False)),
+        'CorClass': r.get('CorClass','') or ''
+    })
+
+DATA_JSON = json.dumps(records, ensure_ascii=False)
+CONT_CLASS_JSON = json.dumps(raw['Classificacao'].fillna('Sem classificação').value_counts().to_dict(), ensure_ascii=False)
+CONT_AG_JSON = json.dumps((raw.groupby(['Agrupador','Classificacao']).size().unstack(fill_value=0)).to_dict(orient='index') if raw.shape[0] else {}, ensure_ascii=False)
+GRUPOS_JSON = json.dumps(sorted([a for a in raw['Agrupador'].dropna().unique().tolist() if str(a).strip()!='']), ensure_ascii=False)
+
+# Labels para cabeçalhos humanizados (se precisar)
+LABELS = {
+    'Agrupador':'Agrupador','Fonte':'Fonte','Ativo':'Ativo','Indicador':'Indicador',
+    'Formula':'Fórmula','Definicao':'Definição','Referencia':'Referência','ValorFmt':'Valor',
+    'Classificacao':'Classificação','Faixa':'Faixa','Descricao':'Descrição'
+}
+
+# ======================= CSS/JS BASE =======================
+BASE_CSS = r"""
+:root{--bg:#0b1020;--panel:#111827;--panel-2:#0f172a;--text:#e5e7eb;--muted:#94a3b8;--border:#1f2937;--accent:#38bdf8}
+*{box-sizing:border-box}html,body{height:100%}body{margin:0;padding:24px;font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial; background:linear-gradient(180deg,#050814,#0b1020 30%,#0b1020 100%);color:var(--text)}
+.container{max-width:1200px;margin:0 auto}.header{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px}.h1{font-size:24px;font-weight:700}
+.badge{display:inline-flex;gap:8px;padding:4px 10px;border-radius:999px;background:#0b1224;color:var(--muted);border:1px solid var(--border);font-size:12px}
+.card{background:var(--panel);border:1px solid var(--border);border-radius:12px;padding:16px}.grid{display:grid;grid-template-columns:repeat(12,1fr);gap:16px}
+.mono{font-family:ui-monospace,Menlo,Consolas,monospace}hr{border:0;border-top:1px solid var(--border);margin:16px 0}small{color:var(--muted)}
+input,select{background:#0c1428;color:var(--text);border:1px solid var(--border);border-radius:8px;padding:10px;outline:none}
+.table{width:100%;border-collapse:separate;border-spacing:0}.table th,.table td{padding:10px 12px;border-bottom:1px solid var(--border)}
+.table thead th{position:sticky;top:0;background:var(--panel-2);text-align:left;font-weight:600}.table tbody tr:hover{background:#0c1428}
+.kv{display:grid;grid-template-columns:160px 1fr;gap:8px}.chip{display:inline-block;padding:4px 8px;border-radius:999px;font-size:12px;border:1px solid var(--border);color:var(--muted)}
+.bar{height:10px;background:#0c1428;border:1px solid var(--border);border-radius:999px;overflow:hidden}.bar>span{display:block;height:100%}
+.footer{margin-top:24px;color:var(--muted);font-size:12px}a{color:#38bdf8}
+"""
+
+BASE_JS_UTIL = r"""
+function hashCode(str){let h=0; for(let i=0;i<(str||'').length;i++){h=((h<<5)-h)+str.charCodeAt(i); h|=0;} return h;}
+function stableColor(text){const h=Math.abs(hashCode(text||''))%360; return `hsl(${h} 70% 45%)`;}
+function truncate(t,n){return (t||'').length>n?(t.substring(0,n-1)+'…'):(t||'');}
+"""
+
+# ======================= BOILERPLATE HTML =======================
+def html_boilerplate(title: str, body: str, extra_head: str = '', extra_js: str = '') -> str:
+    """Template base que injeta CSS/JS e os JSONs com os dados."""
+    return f"""<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8"/><meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>{safe_html(title)}</title>
+  <style>{BASE_CSS}</style>
+  {extra_head}
+</head>
+<body>
+  <div class="container">
+    {body}
+    <div class="footer">Gerado automaticamente – {safe_html(title)}</div>
+  </div>
+  <script>
+    const DATA = {DATA_JSON};
+    const CONT_CLASS = {CONT_CLASS_JSON};
+    const CONT_AGRUP_CLASS = {CONT_AG_JSON};
+    const AGRUPADORES = {GRUPOS_JSON};
+    {BASE_JS_UTIL}
+  </script>
+  <script>
+  {extra_js}
+  </script>
+</body>
+</html>"""
+
+# ======================= BUILDERS EX1..EX6 (todas as colunas) =======================
+def build_ex1():
+    head = """
+    <div class="header"><div class="h1">Ex1 – Tabela Responsiva (todas as colunas)</div>
+    <div class="badge">Total: <span id="total" class="mono"></span></div></div>
+    <div class="card">
+      <div style="display:flex; gap:12px; margin-bottom:12px">
+        <input id="busca" placeholder="Buscar em qualquer campo…" style="flex:1"/>
+        <select id="selClass"><option value="">Todas as classificações</option></select>
+      </div>
+      <div style="overflow:auto; max-height:70vh">
+        <table class="table" id="tbl">
+          <thead><tr>
+            <th data-k="Agrupador">Agrupador</th><th data-k="Fonte">Fonte</th><th data-k="Ativo">Ativo</th>
+            <th data-k="Indicador">Indicador</th><th data-k="Formula">Fórmula</th><th data-k="Definicao">Definição</th>
+            <th data-k="Referencia">Referência</th><th data-k="ValorFmt">Valor</th><th data-k="Classificacao">Classificação</th>
+            <th data-k="Faixa">Faixa</th><th data-k="Descricao">Descrição</th>
+          </tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </div>
+    """
+    js = r"""
+    const sel = document.getElementById('selClass');
+    const classes = [...new Set(DATA.map(d=>d.Classificacao).filter(Boolean))].sort();
+    for(const c of classes){ const o=document.createElement('option'); o.value=c; o.textContent=c; sel.appendChild(o);}
+    const tbody = document.querySelector('#tbl tbody');
+    const total = document.getElementById('total');
+    const busca = document.getElementById('busca');
+
+    function render(){
+      const q = (busca.value||'').toLowerCase();
+      const csel = sel.value||'';
+      const rows = DATA.filter(d=>{
+        const txt = `${d.Agrupador} ${d.Fonte} ${d.Ativo} ${d.Indicador} ${d.Formula} ${d.Definicao} ${d.Referencia} ${d.ValorFmt} ${d.Classificacao} ${d.Faixa} ${d.Descricao}`.toLowerCase();
+        const okTxt = !q || txt.includes(q);
+        const okCls = !csel || d.Classificacao===csel;
+        return okTxt && okCls;
+      });
+      tbody.innerHTML='';
+      for(const d of rows){
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td>${d.Agrupador||''}</td><td>${d.Fonte||''}</td><td>${d.Ativo||''}</td>
+          <td>${d.Indicador||''}</td>
+          <td><small class="mono">${(d.Formula||'').replaceAll('<','&lt;')}</small></td>
+          <td>${truncate(d.Definicao, 140)}</td>
+          <td>${d.Referencia||''}</td>
+          <td><strong>${d.ValorFmt||'-'}</strong></td>
+          <td><span class="chip" style="border-color:${d.CorClass}; color:${d.CorClass}">${d.Classificacao||''}</span></td>
+          <td>${d.Faixa||''}</td>
+          <td>${truncate(d.Descricao, 200)}</td>`;
+        tbody.appendChild(tr);
+      }
+      total.textContent = rows.length;
+    }
+    document.querySelectorAll('#tbl thead th').forEach(th=>{
+      th.style.cursor='pointer';
+      th.addEventListener('click', ()=>{
+        const key = th.dataset.k; const asc = th.dataset.asc !== 'true';
+        DATA.sort((a,b)=> (a[key]||'').toString().localeCompare((b[key]||'').toString(),'pt-BR',{numeric:true})*(asc?1:-1));
+        th.dataset.asc = asc; render();
+      });
+    });
+    busca.addEventListener('input', render);
+    sel.addEventListener('change', render);
+    render();
+    """
+    return html_boilerplate('Ex1 – Tabela Responsiva (todas as colunas)', head, '', js)
+
+def build_ex2():
+    head = """
+    <div class="header"><div class="h1">Ex2 – Cards (todos os campos)</div>
+    <div class="badge">Total: <span id="total" class="mono"></span></div></div>
+    <div class="grid" style="grid-template-columns:repeat(auto-fill,minmax(320px,1fr));" id="cards"></div>
+    """
+    js = r"""
+    const wrap = document.getElementById('cards');
+    const total = document.getElementById('total');
+    wrap.innerHTML='';
+    for(const d of DATA){
+      const bd = d.CorClass || '#6b7280';
+      const el = document.createElement('div'); el.className='card'; el.style.borderColor=bd;
+      el.innerHTML = `
+        <div style="display:flex; justify-content:space-between; align-items:center">
+          <h3 style="margin:0">${d.Indicador||''}</h3>
+          <span class="chip" style="border-color:${bd}; color:${bd}">${d.Classificacao||''}</span>
+        </div>
+        <div style="margin:8px 0 12px" class="mono">Valor: <strong>${d.ValorFmt||'-'}</strong></div>
+        <div class="kv">
+          <div>Agrupador</div><div>${d.Agrupador||''}</div>
+          <div>Fonte</div><div>${d.Fonte||''}</div>
+          <div>Ativo</div><div>${d.Ativo||''}</div>
+          <div>Fórmula</div><div><small class="mono">${(d.Formula||'').replaceAll('<','&lt;')}</small></div>
+          <div>Definição</div><div>${(d.Definicao||'')}</div>
+          <div>Referência</div><div>${d.Referencia||''}</div>
+          <div>Faixa</div><div>${d.Faixa||''}</div>
+          <div>Descrição</div><div>${d.Descricao||''}</div>
+        </div>
+      `;
+      wrap.appendChild(el);
+    }
+    total.textContent = DATA.length;
+    """
+    return html_boilerplate('Ex2 – Cards (todos os campos)', head, '', js)
+
+def build_ex3():
+    head = """
+    <div class="header"><div class="h1">Ex3 – Lista com Filtros (todos os campos)</div>
+    <div class="badge">Agrupadores: <span id="nagr" class="mono"></span></div></div>
+    <div class="card">
+      <div class="grid" style="grid-template-columns:1fr 200px; align-items:center"> 
+        <input id="q" placeholder="Buscar…"/>
+        <select id="g"><option value="">Todos os agrupadores</option></select>
+      </div>
+      <div style="margin:12px 0; display:flex; gap:8px; flex-wrap:wrap" id="chips"></div>
+      <hr/>
+      <div id="list"></div>
+    </div>
+    """
+    js = r"""
+    const q=document.getElementById('q'); const g=document.getElementById('g');
+    const list=document.getElementById('list'); const chips=document.getElementById('chips');
+    const nagr=document.getElementById('nagr');
+    AGRUPADORES.forEach(a=>{const o=document.createElement('option'); o.value=a; o.textContent=a; g.appendChild(o);});
+    nagr.textContent = AGRUPADORES.length;
+
+    const classes=[...new Set(DATA.map(d=>d.Classificacao).filter(Boolean))];
+    let classActive=new Set();
+    for(const c of classes){ const s=document.createElement('span'); s.className='chip'; s.style.borderColor='#1f2937'; s.style.cursor='pointer'; s.textContent=c; s.onclick=()=>{ if(classActive.has(c)){classActive.delete(c); s.style.color=''; s.style.borderColor='#1f2937';} else {classActive.add(c); s.style.color='#38bdf8'; s.style.borderColor='#38bdf8';} render(); }; chips.appendChild(s);}    
+
+    function render(){
+      const term=(q.value||'').toLowerCase(); const ag=g.value||'';
+      const rows=DATA.filter(d=>{
+        const okText=!term||(`${d.Agrupador} ${d.Fonte} ${d.Ativo} ${d.Indicador} ${d.Formula} ${d.Definicao} ${d.Referencia} ${d.ValorFmt} ${d.Classificacao} ${d.Faixa} ${d.Descricao}`.toLowerCase().includes(term));
+        const okAgr=!ag||d.Agrupador===ag; const okClass=classActive.size===0||classActive.has(d.Classificacao);
+        return okText && okAgr && okClass;
+      });
+      list.innerHTML='';
+      for(const d of rows){
+        const div=document.createElement('div'); div.className='card'; div.style.marginBottom='10px';
+        div.innerHTML=`
+          <div style=\"display:flex; gap:12px; align-items:center\">
+            <div style=\"width:44px; height:44px; border-radius:50%; background:${stableColor(d.Indicador||'?')}; display:flex; align-items:center; justify-content:center; font-weight:700\">${(d.Indicador||'?').slice(0,2).toUpperCase()}</div>
+            <div style=\"flex:1\">
+              <div style=\"display:flex; justify-content:space-between; align-items:center\"><strong>${d.Indicador||''}</strong>
+                <span class=\"chip\" style=\"border-color:${d.CorClass}; color:${d.CorClass}\">${d.Classificacao||''}</span></div>
+              <div><small>${d.Agrupador||''} • Valor: <strong>${d.ValorFmt||'-'}</strong> • Faixa: ${d.Faixa||'-'}</small></div>
+            </div>
+          </div>
+          <details style=\"margin-top:8px\"><summary style=\"cursor:pointer; color:#38bdf8\">Ver todos os campos</summary>
+            <div class=\"kv\" style=\"margin-top:8px\">
+              <div>Agrupador</div><div>${d.Agrupador||''}</div>
+              <div>Fonte</div><div>${d.Fonte||''}</div>
+              <div>Ativo</div><div>${d.Ativo||''}</div>
+              <div>Fórmula</div><div><small class=\"mono\">${(d.Formula||'').replaceAll('<','&lt;')}</small></div>
+              <div>Definição</div><div>${d.Definicao||''}</div>
+              <div>Referência</div><div>${d.Referencia||''}</div>
+              <div>Descrição</div><div>${d.Descricao||''}</div>
+            </div>
+          </details>`;
+        list.appendChild(div);
+      }
+    }
+    q.addEventListener('input', render); g.addEventListener('change', render); render();
+    """
+    return html_boilerplate('Ex3 – Lista com Filtros (todos os campos)', head, '', js)
+
+def build_ex4():
+    # Normalização min-max por Agrupador
+    norm_rows = []
+    if raw.shape[0]>0:
+        for ag, g in raw.groupby('Agrupador'):
+            vals = g['Valor_num'].astype(float)
+            mn, mx = vals.min(), vals.max()
+            rng = (mx - mn) if pd.notna(mx) and pd.notna(mn) else None
+            for _, r in g.iterrows():
+                v = r['Valor_num']
+                if rng and rng != 0 and pd.notna(v):
+                    norm = (float(v)-float(mn))/float(rng)*100.0
+                else:
+                    norm = 50.0
+                norm_rows.append({
+                    'Agrupador': r.get('Agrupador','') or '', 'Fonte': r.get('Fonte','') or '', 'Ativo': r.get('Ativo','') or '',
+                    'Indicador': r.get('Indicador','') or '', 'Formula': r.get('Formula','') or '', 'Definicao': r.get('Definicao','') or '',
+                    'Referencia': r.get('Referencia','') or '', 'ValorFmt': r.get('Valor_fmt','') or '', 'Classificacao': r.get('Classificacao','') or '',
+                    'Faixa': r.get('Faixa','') or '', 'Descricao': r.get('Descricao','') or '', 'CorClass': r.get('CorClass','') or '', 'Norm': norm
+                })
+    NORM_JSON = json.dumps(norm_rows, ensure_ascii=False)
+
+    head = """
+    <div class="header"><div class="h1">Ex4 – Comparativo Barras (todos os campos)</div>
+    <div class="badge">Normalização min–max por Agrupador</div></div>
+    <div id="wrap"></div>
+    """
+    js = f"""
+    const NORM = {NORM_JSON};
+    const byAg = NORM.reduce((acc,r)=>{{(acc[r.Agrupador] ||= []).push(r); return acc;}},{{}});
+    const wrap = document.getElementById('wrap');
+    for(const ag of Object.keys(byAg).sort()){{
+      const sec = document.createElement('div'); sec.className='card'; sec.style.marginBottom='12px';
+      sec.innerHTML = `<h3 style="margin-top:0">${{ag}}</h3>`;
+      for(const r of byAg[ag]){{
+        const row = document.createElement('div'); row.style.margin='10px 0';
+        row.innerHTML = `
+          <div style="display:flex; justify-content:space-between; align-items:center; gap:12px">
+            <div style="flex:1"><strong>${{r.Indicador}}</strong> <small class="mono" style="color:var(--muted)">${{r.ValorFmt}}</small></div>
+            <div class="bar" style="flex:3"><span style="width:${{r.Norm.toFixed(1)}}%; background:${{r.CorClass||'#38bdf8'}}"></span></div>
+            <div style="width:140px; text-align:right"><span class="chip" style="border-color:${{r.CorClass}}; color:${{r.CorClass}}">${{r.Classificacao}}</span></div>
+          </div>
+          <details style="margin-top:6px"><summary style="cursor:pointer; color:#38bdf8">Ver todos os campos</summary>
+            <div class="kv" style="margin-top:8px">
+              <div>Agrupador</div><div>${{r.Agrupador||''}}</div>
+              <div>Fonte</div><div>${{r.Fonte||''}}</div>
+              <div>Ativo</div><div>${{r.Ativo||''}}</div>
+              <div>Fórmula</div><div><small class="mono">${{(r.Formula||'').replaceAll('<','&lt;')}} </small></div>
+              <div>Definição</div><div>${{r.Definicao||''}}</div>
+              <div>Referência</div><div>${{r.Referencia||''}}</div>
+              <div>Faixa</div><div>${{r.Faixa||''}}</div>
+              <div>Descrição</div><div>${{r.Descricao||''}}</div>
+            </div>
+          </details>`;
+        sec.appendChild(row);
+      }}
+      wrap.appendChild(sec);
+    }}
+    """
+    return html_boilerplate('Ex4 – Comparativo Barras (todos os campos)', head, '', js)
+
+def build_ex5():
+    head = """
+    <div class="header"><div class="h1">Ex5 – Catálogo (todos os campos)</div>
+    <div class="badge">Avatares por Indicador</div></div>
+    <div class="grid" style="grid-template-columns:repeat(auto-fill,minmax(320px,1fr));" id="grid"></div>
+    """
+    js = r"""
+    const grid=document.getElementById('grid');
+    for(const d of DATA){
+      const card=document.createElement('div'); card.className='card';
+      card.innerHTML=`
+        <div style="display:flex; gap:10px">
+          <div style="width:54px; height:54px; border-radius:12px; background:${stableColor(d.Indicador||'?')}; display:flex; align-items:center; justify-content:center; font-weight:800; font-size:18px">${(d.Indicador||'?').slice(0,2).toUpperCase()}</div>
+          <div style="flex:1">
+            <div style="display:flex; justify-content:space-between; align-items:center"><strong>${d.Indicador||''}</strong>
+              <span class="chip" style="border-color:${d.CorClass}; color:${d.CorClass}">${d.Classificacao||''}</span></div>
+            <div class="mono" style="margin-top:4px">Valor: <strong>${d.ValorFmt||'-'}</strong></div>
+          </div>
+        </div>
+        <div class="kv" style="margin-top:10px">
+          <div>Agrupador</div><div>${d.Agrupador||''}</div>
+          <div>Fonte</div><div>${d.Fonte||''}</div>
+          <div>Ativo</div><div>${d.Ativo||''}</div>
+          <div>Fórmula</div><div><small class="mono">${(d.Formula||'').replaceAll('<','&lt;')}</small></div>
+          <div>Definição</div><div>${d.Definicao||''}</div>
+          <div>Referência</div><div>${d.Referencia||''}</div>
+          <div>Faixa</div><div>${d.Faixa||''}</div>
+          <div>Descrição</div><div>${d.Descricao||''}</div>
+        </div>
+      `;
+      grid.appendChild(card);
+    }
+    """
+    return html_boilerplate('Ex5 – Catálogo (todos os campos)', head, '', js)
+
+def build_ex6():
+    total_linhas = raw.shape[0]
+    total_ag = len(sorted([a for a in raw['Agrupador'].dropna().unique().tolist() if str(a).strip()!='']))
+    total_classes = len([c for c in set(raw['Classificacao'].dropna().tolist()) if str(c).strip()!=''])
+    head = f"""
+    <div class="header"><div class="h1">Ex6 – Relatório & Resumo</div>
+    <div class="badge">{total_linhas} linhas • {total_ag} agrupadores • {total_classes} classificações</div></div>
+    <div class="grid">
+      <div class="card" style="grid-column: span 6"><h3>Distribuição por Classificação</h3><div id="chartClass"></div></div>
+      <div class="card" style="grid-column: span 6"><h3>Classificação por Agrupador</h3><div id="chartAg"></div></div>
+    </div>
+    <div class="card" style="margin-top:12px">
+      <h3 style="margin-top:0">Tabela completa (todas as colunas)</h3>
+      <div style="overflow:auto; max-height:50vh">
+        <table class="table" id="full">
+          <thead><tr>
+            <th>Agrupador</th><th>Fonte</th><th>Ativo</th><th>Indicador</th>
+            <th>Fórmula</th><th>Definição</th><th>Referência</th><th>Valor</th>
+            <th>Classificação</th><th>Faixa</th><th>Descrição</th>
+          </tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </div>
+    """
+    js = r"""
+    const cc=document.getElementById('chartClass');
+    const entries=Object.entries(CONT_CLASS).sort((a,b)=>b[1]-a[1]);
+    for(const [cls,qt] of entries){
+      const color = DATA.find(d=>d.Classificacao===cls)?.CorClass || '#38bdf8';
+      const row=document.createElement('div'); row.style.margin='8px 0';
+      row.innerHTML=`<div style="display:flex; align-items:center; gap:10px">
+        <div style="width:160px">${cls}</div>
+        <div class="bar" style="flex:1"><span style="width:${(qt/Math.max(1,entries[0][1])*100).toFixed(1)}%; background:${color}"></span></div>
+        <div style="width:60px; text-align:right" class="mono">${qt}</div>
+      </div>`; cc.appendChild(row);
+    }
+    const cag=document.getElementById('chartAg'); const ags=Object.keys(CONT_AGRUP_CLASS).sort();
+    for(const ag of ags){
+      const classes=CONT_AGRUP_CLASS[ag]; const total=Object.values(classes).reduce((a,b)=>a+b,0);
+      const row=document.createElement('div'); row.style.margin='8px 0';
+      const bar=document.createElement('div'); bar.className='bar'; bar.style.display='flex';
+      for(const [cls,qt] of Object.entries(classes)){
+        const color = DATA.find(d=>d.Classificacao===cls)?.CorClass || '#0ea5e9';
+        const seg=document.createElement('span'); seg.style.width=(qt/Math.max(1,total)*100)+'%'; seg.style.background=color; bar.appendChild(seg);
+      }
+      row.innerHTML=`<div style="display:flex; align-items:center; gap:10px">
+        <div style="width:220px">${ag}</div><div style="flex:1"></div><div style="width:60px; text-align:right" class="mono">${total}</div></div>`;
+      row.children[0].appendChild(bar); cag.appendChild(row);
+    }
+    const tbody=document.querySelector('#full tbody');
+    for(const d of DATA){
+      const tr=document.createElement('tr');
+      tr.innerHTML=`
+        <td>${d.Agrupador||''}</td><td>${d.Fonte||''}</td><td>${d.Ativo||''}</td><td>${d.Indicador||''}</td>
+        <td><small class="mono">${(d.Formula||'').replaceAll('<','&lt;')}</small></td>
+        <td>${truncate(d.Definicao,160)}</td><td>${d.Referencia||''}</td>
+        <td><strong>${d.ValorFmt||'-'}</strong></td>
+        <td><span class="chip" style="border-color:${d.CorClass}; color:${d.CorClass}">${d.Classificacao||''}</span></td>
+        <td>${d.Faixa||''}</td><td>${truncate(d.Descricao,200)}</td>`;
+      tbody.appendChild(tr);
+    }
+    """
+    return html_boilerplate('Ex6 – Relatório & Tabela completa', head, '', js)
+
+# ======================= NOVOS EX7..EX12 =======================
+def build_ex7_heatmap():
+    piv = raw.pivot_table(index='Agrupador', columns='Classificacao', values='Indicador', aggfunc='count', fill_value=0)
+    ags = list(piv.index.astype(str))
+    clss = list(piv.columns.astype(str))
+    mat = [[int(piv.loc[a,c]) for c in clss] for a in ags] if not piv.empty else []
+    MAT_JSON = json.dumps({'ags':ags, 'cls':clss, 'mat':mat}, ensure_ascii=False)
+
+    head = """
+    <div class="header"><div class="h1">Ex7 – Heatmap Agrupador × Classificação</div>
+    <div class="badge">Intensidade = contagem de indicadores</div></div>
+    <div class="card" id="hm"></div>
+    <div class="card" style="margin-top:12px"><small>Obs.: passe o mouse sobre as células para ver o valor. Todas as colunas estão disponíveis nos demais modelos.</small></div>
+    """
+    js = f"""
+    const HM = {MAT_JSON};
+    const wrap = document.getElementById('hm');
+    if(HM.mat.length===0){{ wrap.innerHTML='<small>Nenhum dado para exibir.</small>'; }}
+    else {{
+      const table = document.createElement('table'); table.className='table';
+      const thead = document.createElement('thead'); const thr=document.createElement('tr');
+      thr.innerHTML = '<th>Agrupador</th>' + HM.cls.map(c=>`<th>${{c}}</th>`).join(''); thead.appendChild(thr);
+      const tbody = document.createElement('tbody');
+      const maxv = Math.max(...HM.mat.flat());
+      for(let i=0;i<HM.ags.length;i++){{
+        const tr=document.createElement('tr');
+        tr.innerHTML = `<td>${{HM.ags[i]}}</td>` + HM.mat[i].map(v=>{
+          const p = maxv? (v/maxv):0; const hue = 210 - Math.round(p*210); const bg = `hsl(${{hue}} 70% ${{20+40*p}}%)`;
+          const color = '#e5e7eb';
+          return `<td title=\"${{v}}\" style=\"background:${{bg}}; color:${{color}}\">${{v}}</td>`;
+        }).join('');
+        tbody.appendChild(tr);
+      }}
+      table.appendChild(thead); table.appendChild(tbody); wrap.appendChild(table);
+    }}
+    """
+    return html_boilerplate('Ex7 – Heatmap Agrupador x Classificação', head, '', js)
+
+def build_ex8_accordion():
+    head = """
+    <div class="header"><div class="h1">Ex8 – Acordeão por Agrupador (todas as colunas)</div>
+    <div class="badge">Expanda para ver a tabela do grupo</div></div>
+    <div id="acc"></div>
+    """
+    js = r"""
+    const byAg = DATA.reduce((acc,d)=>{ (acc[d.Agrupador] ||= []).push(d); return acc; }, {});
+    const acc = document.getElementById('acc');
+    for(const ag of Object.keys(byAg).sort()){
+      const det = document.createElement('details');
+      const sum = document.createElement('summary'); sum.textContent = `${ag}  ( ${byAg[ag].length} )`;
+      sum.style.cursor='pointer'; det.appendChild(sum);
+      const wrap = document.createElement('div'); wrap.className='card'; wrap.style.margin='8px 0';
+      const tbl = document.createElement('table'); tbl.className='table';
+      tbl.innerHTML = `<thead><tr>
+        <th>Agrupador</th><th>Fonte</th><th>Ativo</th><th>Indicador</th>
+        <th>Fórmula</th><th>Definição</th><th>Referência</th><th>Valor</th>
+        <th>Classificação</th><th>Faixa</th><th>Descrição</th>
+      </tr></thead><tbody></tbody>`;
+      const tb = tbl.querySelector('tbody');
+      for(const d of byAg[ag]){
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td>${d.Agrupador||''}</td><td>${d.Fonte||''}</td><td>${d.Ativo||''}</td><td>${d.Indicador||''}</td>
+          <td><small class="mono">${(d.Formula||'').replaceAll('<','&lt;')}</small></td>
+          <td>${truncate(d.Definicao,140)}</td><td>${d.Referencia||''}</td>
+          <td><strong>${d.ValorFmt||'-'}</strong></td>
+          <td><span class="chip" style="border-color:${d.CorClass}; color:${d.CorClass}">${d.Classificacao||''}</span></td>
+          <td>${d.Faixa||''}</td><td>${truncate(d.Descricao,180)}</td>`;
+        tb.appendChild(tr);
+      }
+      wrap.appendChild(tbl); det.appendChild(wrap); acc.appendChild(det);
+    }
+    """
+    return html_boilerplate('Ex8 – Acordeão por Agrupador', head, '', js)
+
+def build_ex9_cards_h():
+    head = """
+    <div class="header"><div class="h1">Ex9 – Cards Horizontais (todos os campos)</div>
+    <div class="badge">Layout de lista detalhada</div></div>
+    <div id="list"></div>
+    """
+    js = r"""
+    const list=document.getElementById('list');
+    for(const d of DATA){
+      const row=document.createElement('div'); row.className='card'; row.style.marginBottom='10px';
+      row.innerHTML=`
+        <div style="display:flex; gap:12px; align-items:flex-start">
+          <div style="width:60px; height:60px; border-radius:12px; background:${stableColor(d.Indicador||'?')}; display:flex; align-items:center; justify-content:center; font-weight:800">${(d.Indicador||'?').slice(0,2).toUpperCase()}</div>
+          <div style="flex:1">
+            <div style="display:flex; justify-content:space-between; align-items:center">
+              <div><strong>${d.Indicador||''}</strong> <small style="color:var(--muted)">${d.Agrupador||''}</small></div>
+              <div class="mono"><strong>${d.ValorFmt||'-'}</strong></div>
+            </div>
+            <div class="kv" style="margin-top:8px">
+              <div>Fonte</div><div>${d.Fonte||''}</div>
+              <div>Ativo</div><div>${d.Ativo||''}</div>
+              <div>Fórmula</div><div><small class="mono">${(d.Formula||'').replaceAll('<','&lt;')}</small></div>
+              <div>Definição</div><div>${d.Definicao||''}</div>
+              <div>Referência</div><div>${d.Referencia||''}</div>
+              <div>Classificação</div><div><span class="chip" style="border-color:${d.CorClass}; color:${d.CorClass}">${d.Classificacao||''}</span></div>
+              <div>Faixa</div><div>${d.Faixa||''}</div>
+              <div>Descrição</div><div>${d.Descricao||''}</div>
+            </div>
+          </div>
+        </div>`;
+      list.appendChild(row);
+    }
+    """
+    return html_boilerplate('Ex9 – Cards Horizontais', head, '', js)
+
+def build_ex10_exec():
+    head = """
+    <div class="header"><div class="h1">Ex10 – Resumo Executivo</div>
+    <div class="badge">Top por classificação + tabela completa</div></div>
+    <div id="tops" class="grid"></div>
+    <div class="card" style="margin-top:12px">
+      <h3 style="margin-top:0">Tabela completa (todas as colunas)</h3>
+      <div style="overflow:auto; max-height:50vh">
+        <table class="table" id="full">
+          <thead><tr>
+            <th>Agrupador</th><th>Fonte</th><th>Ativo</th><th>Indicador</th>
+            <th>Fórmula</th><th>Definição</th><th>Referência</th><th>Valor</th>
+            <th>Classificação</th><th>Faixa</th><th>Descrição</th>
+          </tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </div>
+    """
+    js = r"""
+    const tops = document.getElementById('tops');
+    const classes = [...new Set(DATA.map(d=>d.Classificacao).filter(Boolean))].sort();
+    for(const cls of classes){
+      const sec=document.createElement('div'); sec.className='card'; sec.style.gridColumn='span 6';
+      sec.innerHTML = `<h3 style="margin-top:0">Top por ${cls}</h3><div id="t_${cls.replace(/\W+/g,'_')}"></div>`;
+      const tgt = sec.querySelector('div');
+      const rows = DATA.filter(d=>d.Classificacao===cls).sort((a,b)=> (b.Valor||0)-(a.Valor||0)).slice(0,5);
+      for(const d of rows){
+        const item=document.createElement('div'); item.className='card'; item.style.margin='6px 0';
+        item.innerHTML = `<div style="display:flex; justify-content:space-between; align-items:center">
+          <div><strong>${d.Indicador}</strong> <small style="color:var(--muted)">${d.Agrupador}</small></div>
+          <div class="mono">${d.ValorFmt}</div>
+        </div>`;
+        tgt.appendChild(item);
+      }
+      tops.appendChild(sec);
+    }
+    const tbody=document.querySelector('#full tbody');
+    for(const d of DATA){
+      const tr=document.createElement('tr');
+      tr.innerHTML=`
+        <td>${d.Agrupador||''}</td><td>${d.Fonte||''}</td><td>${d.Ativo||''}</td><td>${d.Indicador||''}</td>
+        <td><small class="mono">${(d.Formula||'').replaceAll('<','&lt;')}</small></td>
+        <td>${truncate(d.Definicao,160)}</td><td>${d.Referencia||''}</td>
+        <td><strong>${d.ValorFmt||'-'}</strong></td>
+        <td><span class="chip" style="border-color:${d.CorClass}; color:${d.CorClass}">${d.Classificacao||''}</span></td>
+        <td>${d.Faixa||''}</td><td>${truncate(d.Descricao,200)}</td>`;
+      tbody.appendChild(tr);
+    }
+    """
+    return html_boilerplate('Ex10 – Resumo Executivo', head, '', js)
+
+def build_ex11_explorer():
+    head = """
+    <div class="header"><div class="h1">Ex11 – Explorador de Colunas</div>
+    <div class="badge">Mostrar/ocultar colunas</div></div>
+    <div class="card">
+      <div id="cols" style="display:flex; gap:10px; flex-wrap:wrap; margin-bottom:10px"></div>
+      <div style="overflow:auto; max-height:70vh">
+        <table class="table" id="tbl">
+          <thead><tr>
+            <th>Agrupador</th><th>Fonte</th><th>Ativo</th><th>Indicador</th>
+            <th>Fórmula</th><th>Definição</th><th>Referência</th><th>Valor</th>
+            <th>Classificação</th><th>Faixa</th><th>Descrição</th>
+          </tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </div>
+    """
+    js = r"""
+    const cols = ['Agrupador','Fonte','Ativo','Indicador','Formula','Definicao','Referencia','ValorFmt','Classificacao','Faixa','Descricao'];
+    const nice = {Formula:'Fórmula',Definicao:'Definição',Referencia:'Referência',ValorFmt:'Valor',Classificacao:'Classificação',Descricao:'Descrição'};
+    const chkWrap = document.getElementById('cols');
+    const tbl = document.getElementById('tbl');
+    // cria checkboxes
+    cols.forEach((c,i)=>{
+      const id='c_'+c; const lab=document.createElement('label'); lab.style.display='flex'; lab.style.alignItems='center'; lab.style.gap='6px';
+      lab.innerHTML = `<input type="checkbox" id="${id}" checked> ${nice[c]||c}`; chkWrap.appendChild(lab);
+      lab.querySelector('input').addEventListener('change', ev=>{
+        const vis = ev.target.checked; const idx = i; // posição fixa
+        tbl.querySelectorAll('tr').forEach(tr=>{ const cell = tr.children[idx]; if(cell) cell.style.display = vis? '' : 'none'; });
+      });
+    });
+    // render tabela
+    const tb = tbl.querySelector('tbody');
+    for(const d of DATA){
+      const tr=document.createElement('tr');
+      tr.innerHTML = `
+        <td>${d.Agrupador||''}</td><td>${d.Fonte||''}</td><td>${d.Ativo||''}</td><td>${d.Indicador||''}</td>
+        <td><small class="mono">${(d.Formula||'').replaceAll('<','&lt;')}</small></td>
+        <td>${truncate(d.Definicao,140)}</td><td>${d.Referencia||''}</td>
+        <td><strong>${d.ValorFmt||'-'}</strong></td>
+        <td><span class="chip" style="border-color:${d.CorClass}; color:${d.CorClass}">${d.Classificacao||''}</span></td>
+        <td>${d.Faixa||''}</td><td>${truncate(d.Descricao,200)}</td>`;
+      tb.appendChild(tr);
+    }
+    """
+    return html_boilerplate('Ex11 – Explorador de Colunas', head, '', js)
+
+def build_ex12_print():
+    extra_head = """
+    <style>
+      body{ background:white; color:#0f172a; }
+      .card{ background:white; border-color:#e5e7eb; }
+      .table thead th{ background:#f8fafc; color:#0f172a; }
+      .chip{ color:#0f172a; }
+      @media print{ body{ padding:0; } .container{ max-width:none; } .card, .badge{ border:0; } a{ color:inherit; } }
+    </style>
+    """
+    head = """
+    <div class="header"><div class="h1">Ex12 – Tabela (Tema Claro / Impressão)</div>
+    <div class="badge">Pronto para imprimir</div></div>
+    <div class="card">
+      <div style="overflow:auto; max-height:80vh">
+        <table class="table" id="tbl">
+          <thead><tr>
+            <th>Agrupador</th><th>Fonte</th><th>Ativo</th><th>Indicador</th>
+            <th>Fórmula</th><th>Definição</th><th>Referência</th><th>Valor</th>
+            <th>Classificação</th><th>Faixa</th><th>Descrição</th>
+          </tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </div>
+    """
+    js = r"""
+    const tb = document.querySelector('#tbl tbody');
+    for(const d of DATA){
+      const tr=document.createElement('tr');
+      tr.innerHTML = `
+        <td>${d.Agrupador||''}</td><td>${d.Fonte||''}</td><td>${d.Ativo||''}</td><td>${d.Indicador||''}</td>
+        <td><small class="mono">${(d.Formula||'').replaceAll('<','&lt;')}</small></td>
+        <td>${truncate(d.Definicao,140)}</td><td>${d.Referencia||''}</td>
+        <td><strong>${d.ValorFmt||'-'}</strong></td>
+        <
